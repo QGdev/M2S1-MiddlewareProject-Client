@@ -1,7 +1,10 @@
 <script lang="ts">
-    import settingsIcon from "$lib/assets/settings.svg";
+	import settingsIcon from "$lib/assets/settings.svg";
 	import downloadIcon from "$lib/assets/download.svg"
-    let fileName = '';
+
+	let fileName = '';
+    let code: string = '';
+	$: nbOfLines = code.split(/\r\n|\r|\n/).length;
 </script>
 
 <main class="h-screen w-screen flex flex-col flex-grow">
@@ -18,13 +21,17 @@
     </div>
     <div class="flex h-full w-full bg-blue-400">
         <div class="h-full w-8 bg-red-500">
-
+            <div class="w-full select-none">
+                {#each Array(nbOfLines) as n, index (index)}
+                    <div class="text-right px-2">{index + 1}</div>
+                {/each}
+            </div>
         </div>
         <div class="flex items-stretch h-full w-full">
-            <div class="bg-green-300 h-full w-1/2 overflow-auto resize-x">
-
+            <div class="h-full w-1/2 bg-blue-100 overflow-auto resize-x">
+                <textarea bind:value={code} class="h-full w-full resize-none outline-none whitespace-nowrap" id="codeBlock"/>
             </div>
-            <div class="flex flex-grow bg-green-500 h-full">
+            <div class="flex flex-grow bg-blue-200 h-full">
 
             </div>
         </div>
