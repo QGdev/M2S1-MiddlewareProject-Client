@@ -2,6 +2,7 @@
 	import {Marked} from "marked";
 	import {markedHighlight} from "marked-highlight";
 	import hljs from 'highlight.js';
+	import 'highlight.js/styles/github.css';
 	import DOMPurify, { sanitize, isSupported } from "isomorphic-dompurify";
 	import settingsIcon from "$lib/assets/settings.svg";
 	import downloadIcon from "$lib/assets/download.svg";
