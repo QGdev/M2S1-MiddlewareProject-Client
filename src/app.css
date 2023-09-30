@@ -74,6 +74,11 @@
         overflow: visible;
     }
 
+    a {
+        color: blue;
+        text-decoration: underline;
+    }
+
     body * {
         @apply transition-colors duration-200;
     }
