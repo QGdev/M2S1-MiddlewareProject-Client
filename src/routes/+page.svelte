@@ -102,14 +102,12 @@
                 {/each}
             </div>
         </div>
-        <div class="flex items-stretch h-full w-full">
-            <div class="h-full overflow-auto resize-x transition-all duration-100 {selectedViewMode==='formatted' && 'hidden'} {selectedViewMode==='code' ? 'w-full': 'w-1/2'}">
-                <textarea bind:value={code} class="h-full w-full resize-none outline-none whitespace-nowrap dark:bg-slate-600 dark:text-white" id="codeBlock"/>
-            </div>
-            <div class="flex flex-grow bg-blue-50 dark:bg-slate-700 h-full {selectedViewMode==='code' && 'hidden'}">
-                <div class="dark:text-white">
-                    {@html html}
-                </div>
+        <div class="h-full overflow-auto transition-all duration-100 {selectedViewMode==='formatted' && 'hidden'} {selectedViewMode==='code' ? 'w-full': 'w-1/2'}">
+            <textarea bind:value={code} class="h-full w-full resize-none outline-none whitespace-nowrap dark:bg-slate-600 dark:text-white" id="codeBlock"/>
+        </div>
+        <div class="flex flex-grow bg-blue-50 dark:bg-slate-700 h-full {selectedViewMode==='code' && 'hidden'}">
+            <div class="dark:text-white">
+                {@html html}
             </div>
         </div>
     </div>
