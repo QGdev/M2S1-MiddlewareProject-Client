@@ -1,49 +1,64 @@
 <script lang="ts">
-	import {Marked} from "marked";
-	import {markedHighlight} from "marked-highlight";
-	import hljs from 'highlight.js';
-	import 'highlight.js/styles/github.css';
-	import DOMPurify, { sanitize, isSupported } from "isomorphic-dompurify";
-	import {onMount} from "svelte";
+    import {Marked} from "marked";
+    import {markedHighlight} from "marked-highlight";
+    import hljs from 'highlight.js';
+    import 'highlight.js/styles/github-dark.css';
+    import DOMPurify, { sanitize, isSupported } from "isomorphic-dompurify";
+    import {onMount} from "svelte";
 
-	let fileName = '';
-	let code: string = '';
-	let theme = 'light';
+    let fileName = '';
+    let code: string = '';
+    let theme = 'light';
 
-	onMount(() => {
-		const codeElement = document.getElementById('codeBlock') as HTMLTextAreaElement;
-		codeElement.addEventListener('input', () => {
-			code = codeElement.value;
-		});
-		document.querySelector('.toggle')?.addEventListener('click', function() {
-			this.classList.add('animate');
-			setTimeout(() => {
+    onMount(() => {
+        const codeElement = document.getElementById('codeBlock') as HTMLTextAreaElement;
+        codeElement.addEventListener('input', () => {
+            code = codeElement.value;
+        });
+        document.querySelector('.toggle')?.addEventListener('click', function() {
+            this.classList.add('animate');
+            setTimeout(() => {
                 this.classList.toggle('active');
-				if (theme === 'light') {
+                if (theme === 'light') {
                     document.documentElement.classList.add('dark');
                     theme = 'dark';
                 } else {
                     document.documentElement.classList.remove('dark');
                     theme = 'light';
                 }
-			}, 150);
-			setTimeout(() => this.classList.remove('animate'), 300);
-		});
-	});
+            }, 150);
+            setTimeout(() => this.classList.remove('animate'), 300);
+        });
+    });
 
-	const marked = new Marked(
-		markedHighlight({
-			langPrefix: 'hljs language-',
-			highlight(code, lang) {
-				const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-				return hljs.highlight(code, { language }).value;
-			}
-		})
+    const renderer = {
+        code(code: string, language: string | undefined) {
+            return `
+                <div class="flex flex-col my-4">
+					<div class="flex justify-between bg-gray-700 dark:bg-gray-800 rounded-t-lg select-none text-white text-xs py-2">
+						<span class="px-4">${language}</span>
+						<button class="px-4">Copy code</button>
+					</div>
+					<pre><code class="hljs language-${language} bg-gray-800 dark:bg-gray-950 rounded-b-lg">${code}</code></pre>
+				</div>
+            `;
+        }
+    };
+
+    const marked = new Marked(
+            markedHighlight({
+                langPrefix: 'hljs language-',
+                highlight(code, lang) {
+                    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                    return hljs.highlight(code, { language }).value;
+                }
+            })
     );
-	$: html = marked.parse(code);
-	$: nbOfLines = code.split(/\r\n|\r|\n/).length;
+    marked.use({ renderer });
+    $: html = marked.parse(code);
+    $: nbOfLines = code.split(/\r\n|\r|\n/).length;
 
-	let selectedViewMode = 'both';
+    let selectedViewMode = 'both';
 
     const downloadCode = () => {
         const element = document.createElement('a');
@@ -54,7 +69,7 @@
         element.click();
     }
 
-	const uploadCode = () => {
+    const uploadCode = () => {
         const element = document.createElement('input');
         element.type = 'file';
         element.accept = '.md';
@@ -70,7 +85,7 @@
     }
 </script>
 
-<main class="h-screen w-screen flex flex-col flex-grow">
+<main class="h-screen w-screen flex flex-col bg-amber-700 overflow-hidden">
     <div class="flex py-6 px-2 h-8 items-center justify-between bg-blue-200 dark:bg-slate-800 border-t border-b border-gray-300 dark:border-gray-600">
         <input class="p-1 rounded-lg bg-blue-50 dark:bg-slate-700 dark:placeholder-white dark:text-white outline-blue-400 dark:outline-blue-700" placeholder="File name" bind:value={fileName} />
         <div class="flex h-full items-center space-x-2">
@@ -95,18 +110,16 @@
         </div>
     </div>
     <div class="flex h-full w-full bg-blue-400">
-        <div class="h-full w-8 bg-blue-50 dark:bg-slate-700 dark:text-white font-semibold {selectedViewMode==='formatted' && 'hidden'}">
-            <div class="w-full select-none">
+        <div class="flex h-[95vh] overflow-y-auto {selectedViewMode==='code' ? 'w-full': 'w-1/2'} {selectedViewMode==='formatted' && 'hidden'}">
+            <div class="flex flex-col h-full w-8 bg-blue-50 dark:bg-slate-700 dark:text-white font-semibold select-none {selectedViewMode==='formatted' && 'hidden'}">
                 {#each Array(nbOfLines) as n, index (index)}
-                    <div class="text-right px-2">{index + 1}</div>
+                    <span class="text-right pr-1">{index + 1}</span>
                 {/each}
             </div>
+            <textarea bind:value={code} class="flex-1 resize-none outline-none whitespace-nowrap dark:bg-slate-600 dark:text-white overflow-y-hidden" id="codeBlock"/>
         </div>
-        <div class="h-full overflow-auto transition-all duration-100 {selectedViewMode==='formatted' && 'hidden'} {selectedViewMode==='code' ? 'w-full': 'w-1/2'}">
-            <textarea bind:value={code} class="h-full w-full resize-none outline-none whitespace-nowrap dark:bg-slate-600 dark:text-white" id="codeBlock"/>
-        </div>
-        <div class="flex flex-grow bg-blue-50 dark:bg-slate-700 h-full {selectedViewMode==='code' && 'hidden'}">
-            <div class="dark:text-white">
+        <div class="flex flex-grow bg-blue-50 dark:bg-slate-700 h-full {selectedViewMode==='formatted' ? 'w-full': 'w-1/2'} {selectedViewMode==='code' && 'hidden'}">
+            <div class="dark:text-white px-2 pb-8 overflow-auto">
                 {@html html}
             </div>
         </div>

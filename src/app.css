@@ -44,11 +44,16 @@
         font-weight: bold;
     }
 
+    .hljs {
+        @apply rounded-none;
+    }
+
+    code {
+        @apply bg-gray-900 rounded p-0.5 text-white;
+    }
+
     blockquote {
-        background: #f9f9f9;
-        border-left: 10px solid #ccc;
-        margin: 1.5em 10px;
-        padding: 1em 10px;
+        @apply bg-gray-50 dark:bg-gray-500 border-l-[10px] border-gray-300 dark:border-gray-600 my-6 mx-2.5 py-4 px-2.5;
     }
 
     ol {
