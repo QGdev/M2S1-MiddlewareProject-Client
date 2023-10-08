@@ -4,44 +4,27 @@
 
 @layer base {
     h1 {
-        display: block;
-        font-size: 2em;
-        margin: 0.67em 0;
-        font-weight: bold;
+        @apply block text-[2rem] mt-2 mb-4 font-bold;
     }
 
     h2 {
-        display: block;
-        font-size: 1.5em;
-        margin: 0.83em 0;
-        font-weight: bold;
+        @apply block text-[1.70rem] mt-2 mb-3 font-bold;
     }
 
     h3 {
-        display: block;
-        font-size: 1.17em;
-        margin: 1em 0;
-        font-weight: bold;
+        @apply block text-[1.40rem] mt-2 mb-3 font-bold;
     }
 
     h4 {
-        display: block;
-        margin: 1.33em 0;
-        font-weight: bold;
+        @apply block text-[1.30rem] mt-2 mb-3 font-bold;
     }
 
     h5 {
-        display: block;
-        font-size: .83em;
-        margin: 1.67em 0;
-        font-weight: bold;
+        @apply block text-[1.20rem] mt-2 mb-2 font-bold;
     }
 
     h6 {
-        display: block;
-        font-size: .67em;
-        margin: 2.33em 0;
-        font-weight: bold;
+        @apply block text-[1.10rem] mt-1 mb-2 font-bold;
     }
 
     .hljs {
@@ -49,7 +32,7 @@
     }
 
     code {
-        @apply bg-gray-900 rounded p-0.5 text-white;
+        @apply bg-gray-700 dark:bg-gray-800 rounded py-0.5 px-1 text-white;
     }
 
     blockquote {

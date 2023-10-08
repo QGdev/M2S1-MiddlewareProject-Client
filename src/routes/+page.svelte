@@ -109,8 +109,8 @@
             </button>
         </div>
     </div>
-    <div class="flex h-full w-full bg-blue-400">
-        <div class="flex h-[95vh] overflow-y-auto {selectedViewMode==='code' ? 'w-full': 'w-1/2'} {selectedViewMode==='formatted' && 'hidden'}">
+    <div class="flex h-[95vh] w-full bg-blue-400">
+        <div class="flex h-full overflow-y-auto {selectedViewMode==='code' ? 'w-full': 'w-1/2'} {selectedViewMode==='formatted' && 'hidden'}">
             <div class="flex flex-col h-full w-8 bg-blue-50 dark:bg-slate-700 dark:text-white font-semibold select-none {selectedViewMode==='formatted' && 'hidden'}">
                 {#each Array(nbOfLines) as n, index (index)}
                     <span class="text-right pr-1">{index + 1}</span>
@@ -118,10 +118,8 @@
             </div>
             <textarea bind:value={code} class="flex-1 resize-none outline-none whitespace-nowrap dark:bg-slate-600 dark:text-white overflow-y-hidden" id="codeBlock"/>
         </div>
-        <div class="flex flex-grow bg-blue-50 dark:bg-slate-700 h-full {selectedViewMode==='formatted' ? 'w-full': 'w-1/2'} {selectedViewMode==='code' && 'hidden'}">
-            <div class="dark:text-white px-2 pb-8 overflow-auto">
-                {@html html}
-            </div>
+        <div class="flex flex-col bg-blue-50 dark:bg-slate-700 h-full dark:text-white px-2 pb-2 overflow-auto {selectedViewMode==='formatted' ? 'w-full': 'w-1/2'} {selectedViewMode==='code' && 'hidden'}">
+            {@html html}
         </div>
     </div>
 </main>
