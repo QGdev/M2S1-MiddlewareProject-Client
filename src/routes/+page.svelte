@@ -11,7 +11,7 @@
     let theme = 'light';
 
     onMount(() => {
-        const codeElement = document.getElementById('codeBlock') as HTMLTextAreaElement;
+        const codeElement = document.getElementById('code-block') as HTMLTextAreaElement;
         codeElement.addEventListener('input', () => {
             code = codeElement.value;
         });
@@ -30,6 +30,17 @@
             setTimeout(() => this.classList.remove('animate'), 300);
         });
     });
+
+    const adjustTextareaHeight = () => {
+        const codeBlock = document.getElementById('code-area') as HTMLTextAreaElement;
+        const codeContainer = document.getElementById('code-container') as HTMLDivElement;
+        codeBlock.style.height = 'auto';
+        codeBlock.style.height = codeBlock.scrollHeight + 15 + 'px';
+        codeContainer.scrollTop = codeBlock.scrollHeight;
+        const numbering = document.getElementById('numbering') as HTMLDivElement;
+        numbering.style.height = 'auto';
+        numbering.style.height = codeBlock.scrollHeight + 15 + 'px';
+    }
 
     const renderer = {
         code(code: string, language: string | undefined) {
@@ -110,13 +121,13 @@
         </div>
     </div>
     <div class="flex h-[95vh] w-full bg-blue-400">
-        <div class="flex h-full overflow-y-auto {selectedViewMode==='code' ? 'w-full': 'w-1/2'} {selectedViewMode==='formatted' && 'hidden'}">
-            <div class="flex flex-col h-full w-8 bg-blue-50 dark:bg-slate-700 dark:text-white font-semibold select-none {selectedViewMode==='formatted' && 'hidden'}">
+        <div class="flex h-full overflow-y-auto {selectedViewMode==='code' ? 'w-full': 'w-1/2'} {selectedViewMode==='formatted' && 'hidden'}" id="code-container">
+            <div class="flex flex-col min-h-[100%] w-8 bg-blue-50 dark:bg-slate-700 dark:text-white font-semibold select-none {selectedViewMode==='formatted' && 'hidden'}" id="numbering">
                 {#each Array(nbOfLines) as n, index (index)}
                     <span class="text-right pr-1">{index + 1}</span>
                 {/each}
             </div>
-            <textarea bind:value={code} class="flex-1 resize-none outline-none whitespace-nowrap dark:bg-slate-600 dark:text-white overflow-y-hidden" id="codeBlock"/>
+            <textarea bind:value={code} on:keyup={adjustTextareaHeight} class="flex-1 resize-none outline-none whitespace-nowrap dark:bg-slate-600 dark:text-white overflow-y-hidden overflow-x-scroll" id="code-area"/>
         </div>
         <div class="flex flex-col bg-blue-50 dark:bg-slate-700 h-full dark:text-white px-2 pb-2 overflow-auto {selectedViewMode==='formatted' ? 'w-full': 'w-1/2'} {selectedViewMode==='code' && 'hidden'}">
             {@html html}
