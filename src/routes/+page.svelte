@@ -85,7 +85,9 @@
         element.type = 'file';
         element.accept = '.md';
         element.onchange = () => {
+            if (!element.files) return;
             const file = element.files[0];
+            fileName = file.name.split('.').slice(0, -1).join('.');
             const reader = new FileReader();
             reader.onload = () => {
                 code = reader.result as string;
