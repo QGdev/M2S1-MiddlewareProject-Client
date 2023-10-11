@@ -11,10 +11,10 @@
     let theme = 'light';
 
     onMount(() => {
-        const codeElement = document.getElementById('code-block') as HTMLTextAreaElement;
-        codeElement.addEventListener('input', () => {
-            code = codeElement.value;
-        });
+        // const codeElement = document.getElementById('code-area') as HTMLTextAreaElement;
+        // codeElement.addEventListener('input', () => {
+        //     code = codeElement.value;
+        // });
         document.querySelector('.toggle')?.addEventListener('click', function() {
             this.classList.add('animate');
             setTimeout(() => {
@@ -32,14 +32,14 @@
     });
 
     const adjustTextareaHeight = () => {
-        const codeBlock = document.getElementById('code-area') as HTMLTextAreaElement;
+        const codeArea = document.getElementById('code-area') as HTMLTextAreaElement;
         const codeContainer = document.getElementById('code-container') as HTMLDivElement;
-        codeBlock.style.height = 'auto';
-        codeBlock.style.height = codeBlock.scrollHeight + 15 + 'px';
-        codeContainer.scrollTop = codeBlock.scrollHeight;
+        codeArea.style.height = 'auto';
+        codeArea.style.height = codeArea.scrollHeight + 15 + 'px';
+        codeContainer.scrollTop = codeArea.scrollHeight;
         const numbering = document.getElementById('numbering') as HTMLDivElement;
         numbering.style.height = 'auto';
-        numbering.style.height = codeBlock.scrollHeight + 15 + 'px';
+        numbering.style.height = codeArea.scrollHeight + 15 + 'px';
     }
 
     const renderer = {
@@ -95,6 +95,7 @@
             reader.readAsText(file);
         }
         element.click();
+        //TODO: adjust textarea height after upload
     }
 </script>
 
@@ -122,7 +123,7 @@
             </button>
         </div>
     </div>
-    <div class="flex h-[95vh] w-full bg-blue-400">
+    <div class="flex h-[95vh] w-full bg-blue-400 dark:[color-scheme:dark]">
         <div class="flex h-full overflow-y-auto {selectedViewMode==='code' ? 'w-full': 'w-1/2'} {selectedViewMode==='formatted' && 'hidden'}" id="code-container">
             <div class="flex flex-col min-h-[100%] w-8 bg-blue-50 dark:bg-slate-700 dark:text-white font-semibold select-none {selectedViewMode==='formatted' && 'hidden'}" id="numbering">
                 {#each Array(nbOfLines) as n, index (index)}
