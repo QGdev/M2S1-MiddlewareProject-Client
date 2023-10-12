@@ -9,6 +9,7 @@
     let fileName = '';
     let code: string = '';
     let theme = 'light';
+    let isFirefox: boolean;
 
     onMount(() => {
         // const codeElement = document.getElementById('code-area') as HTMLTextAreaElement;
@@ -29,17 +30,18 @@
             }, 150);
             setTimeout(() => this.classList.remove('animate'), 300);
         });
+        isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
     });
 
     const adjustTextareaHeight = () => {
         const codeArea = document.getElementById('code-area') as HTMLTextAreaElement;
-        const codeContainer = document.getElementById('code-container') as HTMLDivElement;
         codeArea.style.height = 'auto';
-        codeArea.style.height = codeArea.scrollHeight + 15 + 'px';
-        codeContainer.scrollTop = codeArea.scrollHeight;
+        codeArea.style.height = codeArea.scrollHeight + (isFirefox ? 0 : 15) + 'px';
+        codeArea.blur();
+        codeArea.focus();
         const numbering = document.getElementById('numbering') as HTMLDivElement;
         numbering.style.height = 'auto';
-        numbering.style.height = codeArea.scrollHeight + 15 + 'px';
+        numbering.style.height = codeArea.scrollHeight + (isFirefox ? 0 : 15) + 'px';
     }
 
     const renderer = {
@@ -101,17 +103,20 @@
 
 <main class="h-screen w-screen flex flex-col bg-amber-700 overflow-hidden">
     <div class="flex py-6 px-2 h-8 items-center justify-between bg-blue-200 dark:bg-slate-800 border-t border-b border-gray-300 dark:border-gray-600">
-        <input class="p-1 rounded-lg bg-blue-50 dark:bg-slate-700 dark:placeholder-white dark:text-white outline-blue-400 dark:outline-blue-700" placeholder="File name" bind:value={fileName} />
+        <div class="flex">
+            <input class="p-1 bg-blue-50 dark:bg-slate-700 rounded-l-lg border border-slate-400 dark:border-gray-600 dark:placeholder-white dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150" placeholder="File name" bind:value={fileName} />
+            <p class="p-1 bg-blue-100 dark:bg-gray-800 rounded-r-lg border-y border-r border-slate-400 dark:border-gray-600 dark:text-white select-none">.md</p>
+        </div>
         <div class="flex h-full items-center space-x-2">
             <span class="toggle dark:text-white flex items-center justify-center"></span>
             <div class="flex p-1 space-x-2 bg-blue-100 dark:bg-slate-700 rounded-lg border border-slate-400 dark:border-gray-600">
-                <button class="hover:bg-red-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 {selectedViewMode==='code' && 'bg-red-500'}" on:click={() => {selectedViewMode="code"}}>
+                <button class="hover:bg-red-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 active:scale-90 {selectedViewMode==='code' && 'bg-red-500'}" on:click={() => {selectedViewMode="code"}}>
                     <svg class="fill-red-500 h-6 select-none" viewBox="0 0 16 16"><path d="m10.043 2.05-5.004 11.5.922.4 4.996-11.5ZM3.227 5.07.997 8l2.23 2.926.796-.602L2.253 8l1.77-2.32Zm9.546 0-.796.61L13.747 8l-1.77 2.324.796.602L15.003 8Z"/></svg>
                 </button>
-                <button class="hover:bg-yellow-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 {selectedViewMode==='both' && 'bg-yellow-500'}" on:click={() => {selectedViewMode="both"}}>
+                <button class="hover:bg-yellow-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 active:scale-90 {selectedViewMode==='both' && 'bg-yellow-500'}" on:click={() => {selectedViewMode="both"}}>
                     <svg class="fill-yellow-500 h-6 select-none" viewBox="0 0 16 16"><path d="M2.5 2C1.677 2 1 2.677 1 3.5V9h1V5h12v7.5c0 .281-.219.5-.5.5H12v1h1.5c.823 0 1.5-.677 1.5-1.5v-9c0-.823-.677-1.5-1.5-1.5h-11zm0 1h11c.281 0 .5.219.5.5V4H2v-.5c0-.281.219-.5.5-.5zm3.477 6L4.89 14h1.023L7 9H5.977zm-2.456.045L1.066 11.5l2.455 2.455.708-.707L2.48 11.5 4.23 9.752l-.708-.707zm4.981 0-.707.707L9.543 11.5l-1.748 1.748.707.707 2.455-2.455-2.455-2.455z"/></svg>
                 </button>
-                <button class="hover:bg-green-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 {selectedViewMode==='formatted' && 'bg-green-500'}" on:click={() => {selectedViewMode="formatted"}}>
+                <button class="hover:bg-green-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 active:scale-90 {selectedViewMode==='formatted' && 'bg-green-500'}" on:click={() => {selectedViewMode="formatted"}}>
                     <svg class="fill-green-500 h-6 select-none" viewBox="0 0 16 16"><path d="M2.5 2C1.677 2 1 2.677 1 3.5v9c0 .823.677 1.5 1.5 1.5h11c.823 0 1.5-.677 1.5-1.5v-9c0-.823-.677-1.5-1.5-1.5h-11zm0 1h11c.281 0 .5.219.5.5V4H2v-.5c0-.281.219-.5.5-.5zM2 5h12v7.5c0 .281-.219.5-.5.5h-11a.493.493 0 0 1-.5-.5V5zm1.5 2a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 0-.5-.5h-3zM8 7v1h5V7H8zM4 8h2v3H4V8zm4 1v1h5V9H8zm0 2v1h5v-1H8z"/></svg>
                 </button>
             </div>
@@ -125,12 +130,12 @@
     </div>
     <div class="flex h-[95vh] w-full bg-blue-400 dark:[color-scheme:dark]">
         <div class="flex h-full overflow-y-auto {selectedViewMode==='code' ? 'w-full': 'w-1/2'} {selectedViewMode==='formatted' && 'hidden'}" id="code-container">
-            <div class="flex flex-col min-h-[100%] w-8 bg-blue-50 dark:bg-slate-700 dark:text-white font-semibold select-none {selectedViewMode==='formatted' && 'hidden'}" id="numbering">
+            <div class="flex flex-col min-h-[100%] w-8 bg-blue-50 dark:bg-slate-700 dark:text-white font-semibold select-none" id="numbering">
                 {#each Array(nbOfLines) as n, index (index)}
                     <span class="text-right pr-1">{index + 1}</span>
                 {/each}
             </div>
-            <textarea bind:value={code} on:keyup={adjustTextareaHeight} class="flex-1 resize-none outline-none whitespace-nowrap dark:bg-slate-600 dark:text-white overflow-y-hidden overflow-x-scroll" id="code-area"/>
+            <textarea wrap='off' bind:value={code} on:keyup={adjustTextareaHeight} class="flex-1 px-0.5 resize-none outline-none dark:bg-slate-600 dark:text-white overflow-y-hidden overflow-x-scroll" id="code-area"/>
         </div>
         <div class="flex flex-col bg-blue-50 dark:bg-slate-700 h-full dark:text-white px-2 pb-2 overflow-auto {selectedViewMode==='formatted' ? 'w-full': 'w-1/2'} {selectedViewMode==='code' && 'hidden'}">
             {@html html}
