@@ -70,4 +70,16 @@
     body * {
         @apply transition-colors duration-200;
     }
+
+    td {
+        @apply border border-gray-300 dark:border-gray-500;
+    }
+
+    th {
+        @apply bg-gray-200 dark:bg-gray-600 border border-gray-300 dark:border-gray-500;
+    }
+
+    table {
+        @apply my-2;
+    }
 }
