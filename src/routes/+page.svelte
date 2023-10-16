@@ -70,6 +70,8 @@
     marked.use({ renderer });
     $: html = marked.parse(code);
     $: nbOfLines = code.split(/\r\n|\r|\n/).length;
+    $: nbOfWords = code.split(/\S+/g).length - 1;
+    $: nbOfChars = code.length;
 
     let selectedViewMode = 'both';
 
@@ -108,6 +110,13 @@
             <p class="p-1 bg-blue-100 dark:bg-gray-800 rounded-r-lg border-y border-r border-slate-400 dark:border-gray-600 dark:text-white select-none">.md</p>
         </div>
         <div class="flex h-full items-center space-x-2">
+            <div class="group select-none relative flex justify-center whitespace-nowrap dark:text-white">
+                <p class="font-semibold text-xl">i</p>
+                <div class="group-hover:block hidden absolute top-8 p-2 bg-blue-100 dark:bg-slate-600 rounded-lg border border-gray-300 dark:border-gray-600">
+                    <p class="">Number of words: {nbOfWords}</p>
+                    <p class="">Number of characters: {nbOfChars}</p>
+                </div>
+            </div>
             <span class="toggle dark:text-white flex items-center justify-center"></span>
             <div class="flex p-1 space-x-2 bg-blue-100 dark:bg-slate-700 rounded-lg border border-slate-400 dark:border-gray-600">
                 <button class="hover:bg-red-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 active:scale-90 {selectedViewMode==='code' && 'bg-red-500'}" on:click={() => {selectedViewMode="code"}}>
