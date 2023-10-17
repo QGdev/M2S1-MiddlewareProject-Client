@@ -56,20 +56,6 @@
         numbering.style.height = codeArea.scrollHeight + (isFirefox ? 0 : 15) + 'px';
     }
 
-    const renderer = {
-        code(code: string, language: string | undefined) {
-            return `
-                <div class="flex flex-col my-4">
-					<div class="flex justify-between bg-gray-700 dark:bg-gray-800 rounded-t-lg select-none text-white text-xs py-2">
-						<span class="px-4">${language}</span>
-						<button class="px-4">Copy code</button>
-					</div>
-					<pre><code class="hljs language-${language} bg-gray-800 dark:bg-gray-950 rounded-b-lg">${code}</code></pre>
-				</div>
-            `;
-        }
-    };
-
     const marked = new Marked(
             markedHighlight({
                 langPrefix: 'hljs language-',
@@ -79,6 +65,25 @@
                 }
             })
     );
+
+    const renderer = new marked.Renderer();
+
+    renderer.code = (code, language) => {
+        return `
+            <div class="flex flex-col my-4">
+                <div class="flex justify-between bg-gray-700 dark:bg-gray-800 rounded-t-lg select-none text-white text-xs py-2">
+                    <span class="px-4">${language}</span>
+                    <div class="flex mx-2 py-1 items-center space-x-2">
+                        <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                        <div class="w-2 h-2 rounded-full bg-amber-400"></div>
+                        <div class="w-2 h-2 rounded-full bg-red-400"></div>
+                    </div>
+                </div>
+                <pre><code class="hljs language-${language} bg-gray-800 dark:bg-gray-950 rounded-b-lg">${code}</code></pre>
+            </div>
+        `;
+    };
+
     marked.use({ renderer });
     $: html = marked.parse(code);
     $: nbOfLines = code.split(/\r\n|\r|\n/).length;
@@ -120,8 +125,8 @@
             <p class="p-1 bg-blue-100 dark:bg-gray-800 rounded-r-lg border-y border-r border-slate-400 dark:border-gray-600 dark:text-white select-none">.md</p>
         </div>
         <div class="flex h-full items-center space-x-2">
-            <div class="group select-none relative flex justify-center whitespace-nowrap py-1 px-3 dark:text-white bg-blue-100 dark:bg-slate-700 rounded-lg border border-slate-400 dark:border-gray-600">
-                <p class="font-semibold text-xl">i</p>
+            <div class="group relative flex justify-center whitespace-nowrap py-1 px-3 dark:text-white bg-blue-100 dark:bg-slate-700 rounded-lg border border-slate-400 dark:border-gray-600">
+                <p class="font-semibold text-lg select-none">i</p>
                 <div class="group-hover:block hidden absolute top-8 p-2 bg-blue-100 dark:bg-slate-600 rounded-lg border border-gray-300 dark:border-gray-600">
                     <p class="">Number of words: {nbOfWords}</p>
                     <p class="">Number of characters: {nbOfChars}</p>
