@@ -6,9 +6,21 @@
     import DOMPurify, { sanitize, isSupported } from "isomorphic-dompurify";
     import {onMount} from "svelte";
 
-    let fileName = '';
+    enum Theme {
+        LIGHT = 'light',
+        DARK = 'dark'
+    }
+
+    enum ViewMode {
+        CODE = 'code',
+        FORMATTED = 'formatted',
+        BOTH = 'both'
+    }
+
+    let fileName: string = '';
     let code: string = '';
-    let theme = 'light';
+    let theme: Theme = Theme.LIGHT;
+    let selectedViewMode: ViewMode = ViewMode.BOTH;
     let isFirefox: boolean;
 
     onMount(() => {
@@ -16,16 +28,16 @@
         // codeElement.addEventListener('input', () => {
         //     code = codeElement.value;
         // });
-        document.querySelector('.toggle')?.addEventListener('click', function() {
+        document.querySelector('.toggle')?.addEventListener('click', function(this: HTMLSpanElement) {
             this.classList.add('animate');
             setTimeout(() => {
                 this.classList.toggle('active');
-                if (theme === 'light') {
+                if (theme === Theme.LIGHT) {
                     document.documentElement.classList.add('dark');
-                    theme = 'dark';
+                    theme = Theme.DARK;
                 } else {
                     document.documentElement.classList.remove('dark');
-                    theme = 'light';
+                    theme = Theme.LIGHT;
                 }
             }, 150);
             setTimeout(() => this.classList.remove('animate'), 300);
@@ -73,8 +85,6 @@
     $: nbOfWords = code.split(/\S+/g).length - 1;
     $: nbOfChars = code.length;
 
-    let selectedViewMode = 'both';
-
     const downloadCode = () => {
         const element = document.createElement('a');
         const file = new Blob([code], {type: 'text/markdown'});
@@ -110,7 +120,7 @@
             <p class="p-1 bg-blue-100 dark:bg-gray-800 rounded-r-lg border-y border-r border-slate-400 dark:border-gray-600 dark:text-white select-none">.md</p>
         </div>
         <div class="flex h-full items-center space-x-2">
-            <div class="group select-none relative flex justify-center whitespace-nowrap dark:text-white">
+            <div class="group select-none relative flex justify-center whitespace-nowrap py-1 px-3 dark:text-white bg-blue-100 dark:bg-slate-700 rounded-lg border border-slate-400 dark:border-gray-600">
                 <p class="font-semibold text-xl">i</p>
                 <div class="group-hover:block hidden absolute top-8 p-2 bg-blue-100 dark:bg-slate-600 rounded-lg border border-gray-300 dark:border-gray-600">
                     <p class="">Number of words: {nbOfWords}</p>
@@ -119,13 +129,13 @@
             </div>
             <span class="toggle dark:text-white flex items-center justify-center"></span>
             <div class="flex p-1 space-x-2 bg-blue-100 dark:bg-slate-700 rounded-lg border border-slate-400 dark:border-gray-600">
-                <button class="hover:bg-red-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 active:scale-90 {selectedViewMode==='code' && 'bg-red-500'}" on:click={() => {selectedViewMode="code"}}>
+                <button class="hover:bg-red-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 active:scale-90 {selectedViewMode===ViewMode.CODE && 'bg-red-500'}" on:click={() => {selectedViewMode=ViewMode.CODE}}>
                     <svg class="fill-red-500 h-6 select-none" viewBox="0 0 16 16"><path d="m10.043 2.05-5.004 11.5.922.4 4.996-11.5ZM3.227 5.07.997 8l2.23 2.926.796-.602L2.253 8l1.77-2.32Zm9.546 0-.796.61L13.747 8l-1.77 2.324.796.602L15.003 8Z"/></svg>
                 </button>
-                <button class="hover:bg-yellow-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 active:scale-90 {selectedViewMode==='both' && 'bg-yellow-500'}" on:click={() => {selectedViewMode="both"}}>
+                <button class="hover:bg-yellow-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 active:scale-90 {selectedViewMode===ViewMode.BOTH && 'bg-yellow-500'}" on:click={() => {selectedViewMode=ViewMode.BOTH}}>
                     <svg class="fill-yellow-500 h-6 select-none" viewBox="0 0 16 16"><path d="M2.5 2C1.677 2 1 2.677 1 3.5V9h1V5h12v7.5c0 .281-.219.5-.5.5H12v1h1.5c.823 0 1.5-.677 1.5-1.5v-9c0-.823-.677-1.5-1.5-1.5h-11zm0 1h11c.281 0 .5.219.5.5V4H2v-.5c0-.281.219-.5.5-.5zm3.477 6L4.89 14h1.023L7 9H5.977zm-2.456.045L1.066 11.5l2.455 2.455.708-.707L2.48 11.5 4.23 9.752l-.708-.707zm4.981 0-.707.707L9.543 11.5l-1.748 1.748.707.707 2.455-2.455-2.455-2.455z"/></svg>
                 </button>
-                <button class="hover:bg-green-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 active:scale-90 {selectedViewMode==='formatted' && 'bg-green-500'}" on:click={() => {selectedViewMode="formatted"}}>
+                <button class="hover:bg-green-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 active:scale-90 {selectedViewMode===ViewMode.FORMATTED && 'bg-green-500'}" on:click={() => {selectedViewMode=ViewMode.FORMATTED}}>
                     <svg class="fill-green-500 h-6 select-none" viewBox="0 0 16 16"><path d="M2.5 2C1.677 2 1 2.677 1 3.5v9c0 .823.677 1.5 1.5 1.5h11c.823 0 1.5-.677 1.5-1.5v-9c0-.823-.677-1.5-1.5-1.5h-11zm0 1h11c.281 0 .5.219.5.5V4H2v-.5c0-.281.219-.5.5-.5zM2 5h12v7.5c0 .281-.219.5-.5.5h-11a.493.493 0 0 1-.5-.5V5zm1.5 2a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 0-.5-.5h-3zM8 7v1h5V7H8zM4 8h2v3H4V8zm4 1v1h5V9H8zm0 2v1h5v-1H8z"/></svg>
                 </button>
             </div>
@@ -138,7 +148,7 @@
         </div>
     </div>
     <div class="flex h-[95vh] w-full bg-blue-400 dark:[color-scheme:dark]">
-        <div class="flex h-full overflow-y-auto {selectedViewMode==='code' ? 'w-full': 'w-1/2'} {selectedViewMode==='formatted' && 'hidden'}" id="code-container">
+        <div class="flex h-full overflow-y-auto {selectedViewMode===ViewMode.CODE ? 'w-full': 'w-1/2'} {selectedViewMode===ViewMode.FORMATTED && 'hidden'}" id="code-container">
             <div class="flex flex-col min-h-[100%] w-8 bg-blue-50 dark:bg-slate-700 dark:text-white font-semibold select-none" id="numbering">
                 {#each Array(nbOfLines) as n, index (index)}
                     <span class="text-right pr-1">{index + 1}</span>
@@ -146,7 +156,7 @@
             </div>
             <textarea wrap='off' bind:value={code} on:keyup={adjustTextareaHeight} class="flex-1 px-0.5 resize-none outline-none dark:bg-slate-600 dark:text-white overflow-y-hidden overflow-x-scroll" id="code-area"/>
         </div>
-        <div class="flex flex-col bg-blue-50 dark:bg-slate-700 h-full dark:text-white px-2 pb-2 overflow-auto {selectedViewMode==='formatted' ? 'w-full': 'w-1/2'} {selectedViewMode==='code' && 'hidden'}">
+        <div class="flex flex-col bg-blue-50 dark:bg-slate-700 h-full dark:text-white px-2 pb-2 overflow-auto {selectedViewMode===ViewMode.FORMATTED ? 'w-full': 'w-1/2'} {selectedViewMode===ViewMode.CODE && 'hidden'}">
             {@html html}
         </div>
     </div>
