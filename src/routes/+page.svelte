@@ -3,7 +3,7 @@
     import {markedHighlight} from "marked-highlight";
     import hljs from 'highlight.js';
     import 'highlight.js/styles/github-dark.css';
-    import DOMPurify, { sanitize, isSupported } from "isomorphic-dompurify";
+    import DOMPurify from "isomorphic-dompurify";
     import {onMount} from "svelte";
 
     enum Theme {
@@ -24,10 +24,6 @@
     let isFirefox: boolean;
 
     onMount(() => {
-        // const codeElement = document.getElementById('code-area') as HTMLTextAreaElement;
-        // codeElement.addEventListener('input', () => {
-        //     code = codeElement.value;
-        // });
         document.querySelector('.toggle')?.addEventListener('click', function(this: HTMLSpanElement) {
             this.classList.add('animate');
             setTimeout(() => {
@@ -42,6 +38,11 @@
             }, 150);
             setTimeout(() => this.classList.remove('animate'), 300);
         });
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+            theme = Theme.DARK;
+            document.querySelector('.toggle')?.classList.toggle('active');
+        }
         isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
     });
 
@@ -85,7 +86,7 @@
     };
 
     marked.use({ renderer });
-    $: html = marked.parse(code);
+    $: html = DOMPurify.sanitize(marked.parse(code) as string);
     $: nbOfLines = code.split(/\r\n|\r|\n/).length;
     $: nbOfWords = code.split(/\S+/g).length - 1;
     $: nbOfChars = code.length;
