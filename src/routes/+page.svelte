@@ -160,8 +160,8 @@
         <div class="fixed inset-0 z-20 backdrop-blur-[2px] backdrop-brightness-75" out:fade={{duration: 250}}></div>
         <dialog open bind:this={dialog} class="top-1/3 rounded-lg z-50 bg-transparent shadow-lg" out:fly={{ y: -20, easing: cubicOut, opacity: 0, duration: 250 }}>
             <div class="flex p-2 bg-blue-200 dark:bg-slate-800 rounded-t border-t border-blue-400 dark:border-blue-950 border-x space-x-2">
-                <button class="p-4 rounded-lg border {tab===0 ? 'bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-300 border-blue-400 dark:border-blue-950' : 'bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:dark:text-white border-transparent'}" on:click={() => tab=0}>New document</button>
-                <button class="p-4 rounded-lg border {tab===1 ? 'bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-300 border-blue-400 dark:border-blue-950' : 'bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:dark:text-white border-transparent'}" on:click={() => tab=1}>Join document</button>
+                <button class="p-4 rounded-lg border {tab===0 ? 'bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-300 border-blue-400 dark:border-blue-950 animate-translate-bottom-with-bounce' : 'bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:dark:text-white border-transparent animate-translate-top'}" on:click={() => tab=0}>New document</button>
+                <button class="p-4 rounded-lg border {tab===1 ? 'bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-300 border-blue-400 dark:border-blue-950 animate-translate-bottom-with-bounce' : 'bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:dark:text-white border-transparent animate-translate-top'}" on:click={() => tab=1}>Join document</button>
             </div>
             <div class="flex flex-col h-64 p-2 bg-blue-100 dark:bg-slate-700 rounded-b-lg border border-blue-400 dark:border-blue-950 justify-between">
                 <div class="flex flex-col space-y-2">
