@@ -5,6 +5,8 @@
     import 'highlight.js/styles/github-dark.css';
     import DOMPurify from "isomorphic-dompurify";
     import {onMount} from "svelte";
+    import {fade, fly} from "svelte/transition";
+    import {cubicOut} from "svelte/easing";
 
     enum Theme {
         LIGHT = 'light',
@@ -19,11 +21,25 @@
 
     let fileName: string = '';
     let code: string = '';
+    let codeLength: number = 0;
     let theme: Theme = Theme.LIGHT;
     let selectedViewMode: ViewMode = ViewMode.BOTH;
     let isFirefox: boolean;
+    let socket: WebSocket;
+    let dialog: HTMLDialogElement;
+    let showModal: boolean = true;
+    let tab: number = 0;
 
     onMount(() => {
+        socket = new WebSocket('ws://localhost:8081');
+        socket.addEventListener('open', () => {
+            console.log("Connected to server");
+            socket.send(`{"type": "CONNECT", "userId": "1234"}`);
+        });
+        socket.addEventListener('message', (event) => {
+            console.log('Message from server ', event.data);
+        });
+        
         document.querySelector('.toggle')?.addEventListener('click', function(this: HTMLSpanElement) {
             this.classList.add('animate');
             setTimeout(() => {
@@ -45,6 +61,26 @@
         }
         isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
     });
+
+    const onCodeUpdate = () => {
+        const codeArea = document.getElementById('code-area') as HTMLTextAreaElement;
+        const position = codeArea.selectionStart;
+        const tmp = codeArea.value.slice(0, position).split(/\r\n|\r|\n/);
+        const posX = tmp?.length || 0;
+        const posY = tmp.pop()?.length || 0;
+
+        if (codeLength > code.length) {
+            console.log(`Delete, poxX: ${posX}, posY: ${posY}`);
+            socket.send(`Delete, poxX: ${posX}, posY: ${posY}`);
+        } else {
+            const character = codeArea.value[position - 1];
+            console.log(`Character: ${character}, posX: ${posX}, posY: ${posY}`);
+            socket.send(`Character: ${character}, posX: ${posX}, posY: ${posY}`);
+        }
+        codeLength = code.length;
+    }
+
+    $: code && onCodeUpdate();
 
     const adjustTextareaHeight = () => {
         const codeArea = document.getElementById('code-area') as HTMLTextAreaElement;
@@ -120,15 +156,39 @@
 </script>
 
 <main class="h-screen w-screen flex flex-col bg-amber-700 overflow-hidden">
+    {#if showModal}
+        <div class="fixed inset-0 z-20 backdrop-blur-[2px] backdrop-brightness-75" out:fade={{duration: 250}}></div>
+        <dialog open bind:this={dialog} class="top-1/3 rounded-lg z-50 bg-transparent shadow-lg" out:fly={{ y: -20, easing: cubicOut, opacity: 0, duration: 250 }}>
+            <div class="flex p-2 bg-blue-200 dark:bg-slate-800 rounded-t border-t border-blue-400 dark:border-blue-950 border-x space-x-2">
+                <button class="p-4 rounded-lg border {tab===0 ? 'bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-300 border-blue-400 dark:border-blue-950' : 'bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:dark:text-white border-transparent'}" on:click={() => tab=0}>New document</button>
+                <button class="p-4 rounded-lg border {tab===1 ? 'bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-300 border-blue-400 dark:border-blue-950' : 'bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:dark:text-white border-transparent'}" on:click={() => tab=1}>Join document</button>
+            </div>
+            <div class="flex flex-col h-64 p-2 bg-blue-100 dark:bg-slate-700 rounded-b-lg border border-blue-400 dark:border-blue-950 justify-between">
+                <div class="flex flex-col space-y-2">
+                    <input class="w-full p-1 bg-blue-50 dark:bg-slate-700 rounded-lg border border-blue-400 dark:border-blue-950 dark:placeholder-white dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150" placeholder="User Name"/>
+                    {#if tab===1}
+                        <input class="w-full p-1 bg-blue-50 dark:bg-slate-700 rounded-lg border border-blue-400 dark:border-blue-950 dark:placeholder-white dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150" placeholder="Document title"/>
+                    {/if}
+                </div>
+                <div class="flex w-full justify-center">
+                    <button class="flex gap-1 py-1 px-2 bg-green-400 dark:bg-green-700 text-gray-700 dark:text-white rounded-lg font-medium shadow-lg hover:opacity-80 active:scale-95" on:click={() => showModal=false}>
+                        Confirm
+                        <svg class="fill-gray-700 dark:fill-white h-6" viewBox="0 0 24 24" height="48px"><path d="M 19.28125 5.28125 L 9 15.5625 L 4.71875 11.28125 L 3.28125 12.71875 L 8.28125 17.71875 L 9 18.40625 L 9.71875 17.71875 L 20.71875 6.71875 Z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </dialog>
+    {/if}
+
     <div class="flex py-6 px-2 h-8 items-center justify-between bg-blue-200 dark:bg-slate-800 border-t border-b border-gray-300 dark:border-gray-600">
         <div class="flex">
-            <input class="p-1 bg-blue-50 dark:bg-slate-700 rounded-l-lg border border-slate-400 dark:border-gray-600 dark:placeholder-white dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150" placeholder="File name" bind:value={fileName} />
+            <input class="p-1 bg-blue-50 dark:bg-slate-700 rounded-l-lg border border-slate-400 dark:border-gray-600 dark:placeholder-white dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-10 transition-all duration-150" placeholder="File name" bind:value={fileName} />
             <p class="p-1 bg-blue-100 dark:bg-gray-800 rounded-r-lg border-y border-r border-slate-400 dark:border-gray-600 dark:text-white select-none">.md</p>
         </div>
         <div class="flex h-full items-center space-x-2">
             <div class="group relative flex justify-center whitespace-nowrap py-1 px-3 dark:text-white bg-blue-100 dark:bg-slate-700 rounded-lg border border-slate-400 dark:border-gray-600">
                 <p class="font-semibold text-lg select-none">i</p>
-                <div class="group-hover:block hidden absolute top-8 p-2 bg-blue-100 dark:bg-slate-600 rounded-lg border border-gray-300 dark:border-gray-600">
+                <div class="group-hover:block hidden absolute top-8 p-2 bg-blue-100 dark:bg-slate-600 rounded-lg border border-gray-300 dark:border-gray-500">
                     <p class="">Number of words: {nbOfWords}</p>
                     <p class="">Number of characters: {nbOfChars}</p>
                 </div>
