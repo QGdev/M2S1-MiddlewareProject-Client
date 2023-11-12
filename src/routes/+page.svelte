@@ -29,6 +29,9 @@
     let dialog: HTMLDialogElement;
     let showModal: boolean = true;
     let tab: number = 0;
+    let userName: string = '';
+    let documentName: string = '';
+    let documentId: string = '';
 
     onMount(() => {
         socket = new WebSocket('ws://localhost:8081');
@@ -153,6 +156,41 @@
         element.click();
         //TODO: adjust textarea height after upload
     }
+
+    const createDocument = async (docName: string, userName: string) => {
+        const response = await fetch(`http://localhost:8080/create?docName=${docName}&userName=${userName}`, {method: 'POST'});
+        const data = await response.json();
+        console.log(data);
+    }
+
+    const joinDocument = async (docId: string, userName: string) => {
+        const response = await fetch(`http://localhost:8080/join?docId=${docId}&userName=${userName}`, {method: 'POST'});
+        const data = await response.json();
+        console.log(data);
+    }
+
+    let userNamePlaceholder: string = 'User Name';
+    let documentNamePlaceholder: string = 'Document title';
+    let documentIdPlaceholder: string = 'Document ID';
+
+    const onConfirm = () => {
+        if (tab === 0) {
+            if (!userName || !documentName) {
+                if (!userName) userNamePlaceholder = 'Please enter a user name';
+                if (!documentName) documentNamePlaceholder = 'Please enter a document title';
+                return;
+            }
+            createDocument(documentName, userName);
+        } else {
+            if (!userName || !documentId) {
+                if (!userName) userNamePlaceholder = 'Please enter a user name';
+                if (!documentId) documentIdPlaceholder = 'Please enter a document ID';
+                return;
+            }
+            joinDocument(documentId, userName);
+        }
+        showModal = false;
+    }
 </script>
 
 <main class="h-screen w-screen flex flex-col bg-amber-700 overflow-hidden">
@@ -165,13 +203,15 @@
             </div>
             <div class="flex flex-col h-64 p-2 bg-blue-100 dark:bg-slate-700 rounded-b-lg border border-blue-400 dark:border-blue-950 justify-between">
                 <div class="flex flex-col space-y-2">
-                    <input class="w-full p-1 bg-blue-50 dark:bg-slate-700 rounded-lg border border-blue-400 dark:border-blue-950 dark:placeholder-white dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150" placeholder="User Name"/>
-                    {#if tab===1}
-                        <input class="w-full p-1 bg-blue-50 dark:bg-slate-700 rounded-lg border border-blue-400 dark:border-blue-950 dark:placeholder-white dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150" placeholder="Document title"/>
+                    <input class="w-full p-1 bg-blue-50 dark:bg-slate-700 rounded-lg border border-blue-400 dark:border-blue-950 dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150 {userNamePlaceholder==='User Name' ? 'dark:placeholder-white' : 'placeholder-red-500'}" placeholder={userNamePlaceholder} bind:value={userName}/>
+                    {#if tab===0}
+                        <input class="w-full p-1 bg-blue-50 dark:bg-slate-700 rounded-lg border border-blue-400 dark:border-blue-950 dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150 {documentNamePlaceholder==='Document title' ? 'dark:placeholder-white' : 'placeholder-red-500'}" placeholder={documentNamePlaceholder} bind:value={documentName}/>
+                    {:else}
+                        <input class="w-full p-1 bg-blue-50 dark:bg-slate-700 rounded-lg border border-blue-400 dark:border-blue-950 dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150 {documentIdPlaceholder==='Document ID' ? 'dark:placeholder-white' : 'placeholder-red-500'}" placeholder={documentIdPlaceholder} bind:value={documentId}/>
                     {/if}
                 </div>
                 <div class="flex w-full justify-center">
-                    <button class="flex gap-1 py-1 px-2 bg-green-400 dark:bg-green-700 text-gray-700 dark:text-white rounded-lg font-medium shadow-lg hover:opacity-80 active:scale-95" on:click={() => showModal=false}>
+                    <button class="flex gap-1 py-1 px-2 bg-green-400 dark:bg-green-700 text-gray-700 dark:text-white rounded-lg font-medium shadow-lg hover:opacity-80 active:scale-95 select-none" on:click={onConfirm}>
                         Confirm
                         <svg class="fill-gray-700 dark:fill-white h-6" viewBox="0 0 24 24" height="48px"><path d="M 19.28125 5.28125 L 9 15.5625 L 4.71875 11.28125 L 3.28125 12.71875 L 8.28125 17.71875 L 9 18.40625 L 9.71875 17.71875 L 20.71875 6.71875 Z"/></svg>
                     </button>
