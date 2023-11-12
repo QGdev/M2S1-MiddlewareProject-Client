@@ -7,6 +7,14 @@
     import {onMount} from "svelte";
     import {fade, fly} from "svelte/transition";
     import {cubicOut} from "svelte/easing";
+    import { SvelteToast ,toast } from "@zerodevx/svelte-toast";
+    import type {
+        ConnectMessage,
+        DeleteCharMessage,
+        DeleteLineBreakMessage,
+        DocumentOperationAnswer,
+        InsertMessage
+    } from "../types";
 
     enum Theme {
         LIGHT = 'light',
@@ -29,15 +37,18 @@
     let dialog: HTMLDialogElement;
     let showModal: boolean = true;
     let tab: number = 0;
-    let userName: string = '';
-    let documentName: string = '';
-    let documentId: string = '';
+    let userNameForm: string = '';
+    let documentNameForm: string = '';
+    let documentIdForm: string = '';
+    let documentAnswer: DocumentOperationAnswer;
 
     onMount(() => {
-        socket = new WebSocket('ws://localhost:8081');
+        socket = new WebSocket('ws://localhost:8080/ws');
         socket.addEventListener('open', () => {
-            console.log("Connected to server");
-            socket.send(`{"type": "CONNECT", "userId": "1234"}`);
+            toast.push('Connected to server');
+        });
+        socket.addEventListener('close', () => {
+            toast.push('Disconnected from server', {classes: ['error']});
         });
         socket.addEventListener('message', (event) => {
             console.log('Message from server ', event.data);
@@ -65,6 +76,10 @@
         isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
     });
 
+    const sendMessage = (messageData: ConnectMessage|InsertMessage|DeleteLineBreakMessage|DeleteCharMessage) => {
+        socket.send(JSON.stringify(messageData));
+    }
+
     const onCodeUpdate = () => {
         const codeArea = document.getElementById('code-area') as HTMLTextAreaElement;
         const position = codeArea.selectionStart;
@@ -73,12 +88,12 @@
         const posY = tmp.pop()?.length || 0;
 
         if (codeLength > code.length) {
-            console.log(`Delete, poxX: ${posX}, posY: ${posY}`);
-            socket.send(`Delete, poxX: ${posX}, posY: ${posY}`);
+            console.log({type: 'DELETE_CHAR', lineIdx: posX, columnIdx: posY, userId: documentAnswer.user.id});
+            sendMessage({type: 'DELETE_CHAR', lineIdx: posX, columnIdx: posY, userId: documentAnswer.user.id});
         } else {
             const character = codeArea.value[position - 1];
-            console.log(`Character: ${character}, posX: ${posX}, posY: ${posY}`);
-            socket.send(`Character: ${character}, posX: ${posX}, posY: ${posY}`);
+            console.log({type: 'INSERT', lineIdx: posX, columnIdx: posY, char: character, userId: documentAnswer.user.id});
+            sendMessage({type: 'INSERT', lineIdx: posX, columnIdx: posY, char: character, userId: documentAnswer.user.id});
         }
         codeLength = code.length;
     }
@@ -95,6 +110,10 @@
         numbering.style.height = 'auto';
         numbering.style.height = codeArea.scrollHeight + (isFirefox ? 0 : 15) + 'px';
     }
+
+    const toastOptions = {
+        pausable: true,
+    };
 
     const marked = new Marked(
             markedHighlight({
@@ -130,6 +149,9 @@
     $: nbOfWords = code.split(/\S+/g).length - 1;
     $: nbOfChars = code.length;
 
+    /**
+     * @description Download the Markdown code as a file
+     */
     const downloadCode = () => {
         const element = document.createElement('a');
         const file = new Blob([code], {type: 'text/markdown'});
@@ -139,6 +161,9 @@
         element.click();
     }
 
+    /**
+     * @description Upload a Markdown file and set the code variable to its content
+     */
     const uploadCode = () => {
         const element = document.createElement('input');
         element.type = 'file';
@@ -157,16 +182,18 @@
         //TODO: adjust textarea height after upload
     }
 
-    const createDocument = async (docName: string, userName: string) => {
+    const createDocument = async (docName: string, userName: string): Promise<DocumentOperationAnswer> => {
         const response = await fetch(`http://localhost:8080/create?docName=${docName}&userName=${userName}`, {method: 'POST'});
-        const data = await response.json();
+        const data: DocumentOperationAnswer = await response.json();
         console.log(data);
+        return data;
     }
 
-    const joinDocument = async (docId: string, userName: string) => {
+    const joinDocument = async (docId: string, userName: string): Promise<DocumentOperationAnswer> => {
         const response = await fetch(`http://localhost:8080/join?docId=${docId}&userName=${userName}`, {method: 'POST'});
-        const data = await response.json();
+        const data: DocumentOperationAnswer = await response.json();
         console.log(data);
+        return data;
     }
 
     let userNamePlaceholder: string = 'User Name';
@@ -175,39 +202,48 @@
 
     const onConfirm = () => {
         if (tab === 0) {
-            if (!userName || !documentName) {
-                if (!userName) userNamePlaceholder = 'Please enter a user name';
-                if (!documentName) documentNamePlaceholder = 'Please enter a document title';
+            if (!userNameForm || !documentNameForm) {
+                if (!userNameForm) userNamePlaceholder = 'Please enter a user name';
+                if (!documentNameForm) documentNamePlaceholder = 'Please enter a document title';
                 return;
             }
-            createDocument(documentName, userName);
+            createDocument(documentNameForm, userNameForm).then((data) => {
+                documentAnswer = data;
+                console.log(documentAnswer);
+                sendMessage({type: 'CONNECT', userId: documentAnswer.user.id, docId: documentAnswer.document.id});
+            });
         } else {
-            if (!userName || !documentId) {
-                if (!userName) userNamePlaceholder = 'Please enter a user name';
-                if (!documentId) documentIdPlaceholder = 'Please enter a document ID';
+            if (!userNameForm || !documentIdForm) {
+                if (!userNameForm) userNamePlaceholder = 'Please enter a user name';
+                if (!documentIdForm) documentIdPlaceholder = 'Please enter a document ID';
                 return;
             }
-            joinDocument(documentId, userName);
+            joinDocument(documentIdForm, userNameForm).then((data) => {
+                documentAnswer = data;
+                console.log(documentAnswer);
+                sendMessage({type: 'CONNECT', userId: documentAnswer.user.id, docId: documentAnswer.document.id});
+            });
         }
         showModal = false;
     }
 </script>
 
 <main class="h-screen w-screen flex flex-col bg-amber-700 overflow-hidden">
+    <SvelteToast options={toastOptions} />
     {#if showModal}
         <div class="fixed inset-0 z-20 backdrop-blur-[2px] backdrop-brightness-75" out:fade={{duration: 250}}></div>
         <dialog open bind:this={dialog} class="top-1/3 rounded-lg z-50 bg-transparent shadow-lg" out:fly={{ y: -20, easing: cubicOut, opacity: 0, duration: 250 }}>
-            <div class="flex p-2 bg-blue-200 dark:bg-slate-800 rounded-t border-t border-blue-400 dark:border-blue-950 border-x space-x-2">
+            <div class="flex p-2 bg-blue-200 dark:bg-slate-800 rounded-t-lg border-t border-blue-400 dark:border-blue-950 border-x space-x-2">
                 <button class="p-4 rounded-lg border {tab===0 ? 'bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-300 border-blue-400 dark:border-blue-950 animate-translate-bottom-with-bounce' : 'bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:dark:text-white border-transparent animate-translate-top'}" on:click={() => tab=0}>New document</button>
                 <button class="p-4 rounded-lg border {tab===1 ? 'bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-300 border-blue-400 dark:border-blue-950 animate-translate-bottom-with-bounce' : 'bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 hover:dark:text-white border-transparent animate-translate-top'}" on:click={() => tab=1}>Join document</button>
             </div>
             <div class="flex flex-col h-64 p-2 bg-blue-100 dark:bg-slate-700 rounded-b-lg border border-blue-400 dark:border-blue-950 justify-between">
                 <div class="flex flex-col space-y-2">
-                    <input class="w-full p-1 bg-blue-50 dark:bg-slate-700 rounded-lg border border-blue-400 dark:border-blue-950 dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150 {userNamePlaceholder==='User Name' ? 'dark:placeholder-white' : 'placeholder-red-500'}" placeholder={userNamePlaceholder} bind:value={userName}/>
+                    <input class="w-full p-1 bg-blue-50 dark:bg-slate-700 rounded-lg border border-blue-400 dark:border-blue-950 dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150 {userNamePlaceholder==='User Name' ? 'dark:placeholder-white' : 'placeholder-red-500'}" placeholder={userNamePlaceholder} bind:value={userNameForm}/>
                     {#if tab===0}
-                        <input class="w-full p-1 bg-blue-50 dark:bg-slate-700 rounded-lg border border-blue-400 dark:border-blue-950 dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150 {documentNamePlaceholder==='Document title' ? 'dark:placeholder-white' : 'placeholder-red-500'}" placeholder={documentNamePlaceholder} bind:value={documentName}/>
+                        <input class="w-full p-1 bg-blue-50 dark:bg-slate-700 rounded-lg border border-blue-400 dark:border-blue-950 dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150 {documentNamePlaceholder==='Document title' ? 'dark:placeholder-white' : 'placeholder-red-500'}" placeholder={documentNamePlaceholder} bind:value={documentNameForm}/>
                     {:else}
-                        <input class="w-full p-1 bg-blue-50 dark:bg-slate-700 rounded-lg border border-blue-400 dark:border-blue-950 dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150 {documentIdPlaceholder==='Document ID' ? 'dark:placeholder-white' : 'placeholder-red-500'}" placeholder={documentIdPlaceholder} bind:value={documentId}/>
+                        <input class="w-full p-1 bg-blue-50 dark:bg-slate-700 rounded-lg border border-blue-400 dark:border-blue-950 dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-50 transition-all duration-150 {documentIdPlaceholder==='Document ID' ? 'dark:placeholder-white' : 'placeholder-red-500'}" placeholder={documentIdPlaceholder} bind:value={documentIdForm}/>
                     {/if}
                 </div>
                 <div class="flex w-full justify-center">
@@ -289,5 +325,16 @@
         0%   { transform: scale(1); }
         50%  { transform: scale(0); }
         100% { transform: scale(1); }
+    }
+
+    :root {
+        --toastContainerTop: auto;
+        --toastContainerRight: 2rem;
+        --toastContainerBottom: 2rem;
+        --toastContainerLeft: auto;
+    }
+    :global(.error) {
+        --toastBackground: #f56565;
+        --toastBarBackground: #e53e3e;
     }
 </style>
