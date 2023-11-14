@@ -41,6 +41,7 @@
     let documentNameForm: string = '';
     let documentIdForm: string = '';
     let documentAnswer: DocumentOperationAnswer;
+    let codeArea: HTMLTextAreaElement;
 
     onMount(() => {
         socket = new WebSocket('ws://localhost:8080/ws');
@@ -52,7 +53,38 @@
         });
         socket.addEventListener('message', (event) => {
             console.log('Message from server ', event.data);
+            const messageJson = JSON.parse(event.data);
+            if (messageJson.userId !== documentAnswer.user.id) {
+                const codeSplit = code.split(/\r\n|\r|\n/);
+                let index: number = 0;
+                let tmp: string = '';
+                for (let i=1; i<messageJson.lineIdx; i++) {
+                    index += codeSplit[i].length + 1;
+                    tmp += codeSplit[i] + ' ';
+                }
+                index += messageJson.columnIdx;
+                console.log('index', index);
+                console.log('codesplit', codeSplit);
+                console.log('tmp', tmp);
+                if (messageJson.type==='INSERT') {
+                    console.log('INSERT')
+                    code = code.slice(0, index) + messageJson.char + code.slice(index);
+                } else if (messageJson.type==='DELETE_CHAR') {
+                    console.log('DELETE_CHAR')
+                    code = code.slice(0, index) + code.slice(index + 1);
+                } else if (messageJson.type==='DELETE_LINE_BREAK') {
+                    console.log('DELETE_LINE_BREAK')
+                    //TODO
+                }
+            } else {
+                if (messageJson.type==='CONNECT') {
+                    code = messageJson.content;
+                }
+            }
         });
+
+        codeArea = document.getElementById('code-area') as HTMLTextAreaElement;
+        document.getElementById('code-area')?.addEventListener('keyup', onCodeUpdate);
         
         document.querySelector('.toggle')?.addEventListener('click', function(this: HTMLSpanElement) {
             this.classList.add('animate');
@@ -81,7 +113,6 @@
     }
 
     const onCodeUpdate = () => {
-        const codeArea = document.getElementById('code-area') as HTMLTextAreaElement;
         const position = codeArea.selectionStart;
         const tmp = codeArea.value.slice(0, position).split(/\r\n|\r|\n/);
         const posX = tmp?.length || 0;
@@ -90,18 +121,15 @@
         if (codeLength > code.length) {
             console.log({type: 'DELETE_CHAR', lineIdx: posX, columnIdx: posY, userId: documentAnswer.user.id});
             sendMessage({type: 'DELETE_CHAR', lineIdx: posX, columnIdx: posY, userId: documentAnswer.user.id});
-        } else {
+        } else if (codeLength < code.length) {
             const character = codeArea.value[position - 1];
             console.log({type: 'INSERT', lineIdx: posX, columnIdx: posY, char: character, userId: documentAnswer.user.id});
             sendMessage({type: 'INSERT', lineIdx: posX, columnIdx: posY, char: character, userId: documentAnswer.user.id});
-        }
+        } else return;
         codeLength = code.length;
     }
 
-    $: code && onCodeUpdate();
-
     const adjustTextareaHeight = () => {
-        const codeArea = document.getElementById('code-area') as HTMLTextAreaElement;
         codeArea.style.height = 'auto';
         codeArea.style.height = codeArea.scrollHeight + (isFirefox ? 0 : 15) + 'px';
         codeArea.blur();
@@ -247,7 +275,7 @@
                     {/if}
                 </div>
                 <div class="flex w-full justify-center">
-                    <button class="flex gap-1 py-1 px-2 bg-green-400 dark:bg-green-700 text-gray-700 dark:text-white rounded-lg font-medium shadow-lg hover:opacity-80 active:scale-95 select-none" on:click={onConfirm}>
+                    <button class="flex gap-1 py-1 px-2 bg-transparent text-gray-700 dark:text-white rounded-lg border border-green-400 dark:border-green-700 hover:bg-green-400 dark:hover:bg-green-700 font-medium active:scale-95 select-none" on:click={onConfirm}>
                         Confirm
                         <svg class="fill-gray-700 dark:fill-white h-6" viewBox="0 0 24 24" height="48px"><path d="M 19.28125 5.28125 L 9 15.5625 L 4.71875 11.28125 L 3.28125 12.71875 L 8.28125 17.71875 L 9 18.40625 L 9.71875 17.71875 L 20.71875 6.71875 Z"/></svg>
                     </button>
