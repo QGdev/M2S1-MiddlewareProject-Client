@@ -29,7 +29,7 @@
 
     let fileName: string = '';
     let code: string = '';
-    let codeLength: number = 0;
+    let oldCode: string = '';
     let theme: Theme = Theme.LIGHT;
     let selectedViewMode: ViewMode = ViewMode.BOTH;
     let isFirefox: boolean;
@@ -55,6 +55,11 @@
             console.log('Message from server ', event.data);
             const messageJson = JSON.parse(event.data);
             if (messageJson.userId !== documentAnswer.user.id) {
+                if (messageJson.type==='CONNECT') {
+                    console.log('CONNECT')
+                    toast.push(`${messageJson.userName} joined the document`);
+                    return;
+                }
                 const codeSplit = code.split(/\r\n|\r|\n/);
                 let index: number = 0;
                 let tmp: string = '';
@@ -65,7 +70,7 @@
                 index += messageJson.columnIdx;
                 console.log('index', index);
                 console.log('codesplit', codeSplit);
-                console.log('tmp', tmp);
+                console.log('code: ', code)
                 if (messageJson.type==='INSERT') {
                     console.log('INSERT')
                     code = code.slice(0, index) + messageJson.char + code.slice(index);
@@ -75,10 +80,6 @@
                 } else if (messageJson.type==='DELETE_LINE_BREAK') {
                     console.log('DELETE_LINE_BREAK')
                     //TODO
-                }
-            } else {
-                if (messageJson.type==='CONNECT') {
-                    code = messageJson.content;
                 }
             }
         });
@@ -118,15 +119,15 @@
         const posX = tmp?.length || 0;
         const posY = tmp.pop()?.length || 0;
 
-        if (codeLength > code.length) {
+        if (oldCode.length > code.length) {
             console.log({type: 'DELETE_CHAR', lineIdx: posX, columnIdx: posY, userId: documentAnswer.user.id});
             sendMessage({type: 'DELETE_CHAR', lineIdx: posX, columnIdx: posY, userId: documentAnswer.user.id});
-        } else if (codeLength < code.length) {
+        } else if (oldCode.length < code.length) {
             const character = codeArea.value[position - 1];
             console.log({type: 'INSERT', lineIdx: posX, columnIdx: posY, char: character, userId: documentAnswer.user.id});
             sendMessage({type: 'INSERT', lineIdx: posX, columnIdx: posY, char: character, userId: documentAnswer.user.id});
         } else return;
-        codeLength = code.length;
+        oldCode = code;
     }
 
     const adjustTextareaHeight = () => {
@@ -237,6 +238,7 @@
             }
             createDocument(documentNameForm, userNameForm).then((data) => {
                 documentAnswer = data;
+                code = documentAnswer.document.content;
                 console.log(documentAnswer);
                 sendMessage({type: 'CONNECT', userId: documentAnswer.user.id, docId: documentAnswer.document.id});
             });
@@ -248,6 +250,7 @@
             }
             joinDocument(documentIdForm, userNameForm).then((data) => {
                 documentAnswer = data;
+                code = documentAnswer.document.content;
                 console.log(documentAnswer);
                 sendMessage({type: 'CONNECT', userId: documentAnswer.user.id, docId: documentAnswer.document.id});
             });
