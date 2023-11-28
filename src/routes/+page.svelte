@@ -10,10 +10,11 @@
     import { SvelteToast ,toast } from "@zerodevx/svelte-toast";
     import type {
         ConnectMessage,
+        InsertCharMessage,
+        InsertLineBreakMessage,
         DeleteCharMessage,
         DeleteLineBreakMessage,
         DocumentOperationAnswer,
-        InsertMessage
     } from "../types";
 
     enum Theme {
@@ -71,8 +72,8 @@
                 console.log('index', index);
                 console.log('codesplit', codeSplit);
                 console.log('code: ', code)
-                if (messageJson.type==='INSERT') {
-                    console.log('INSERT')
+                if (messageJson.type==='INSERT_CHAR') {
+                    console.log('INSERT_CHAR')
                     code = code.slice(0, index) + messageJson.char + code.slice(index);
                 } else if (messageJson.type==='DELETE_CHAR') {
                     console.log('DELETE_CHAR')
@@ -109,7 +110,7 @@
         isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
     });
 
-    const sendMessage = (messageData: ConnectMessage|InsertMessage|DeleteLineBreakMessage|DeleteCharMessage) => {
+    const sendMessage = (messageData: ConnectMessage|InsertCharMessage|InsertLineBreakMessage|DeleteLineBreakMessage|DeleteCharMessage) => {
         socket.send(JSON.stringify(messageData));
     }
 
@@ -124,8 +125,8 @@
             sendMessage({type: 'DELETE_CHAR', lineIdx: posX, columnIdx: posY, userId: documentAnswer.user.id});
         } else if (oldCode.length < code.length) {
             const character = codeArea.value[position - 1];
-            console.log({type: 'INSERT', lineIdx: posX, columnIdx: posY, char: character, userId: documentAnswer.user.id});
-            sendMessage({type: 'INSERT', lineIdx: posX, columnIdx: posY, char: character, userId: documentAnswer.user.id});
+            console.log({type: 'INSERT_CHAR', lineIdx: posX, columnIdx: posY, char: character, userId: documentAnswer.user.id});
+            sendMessage({type: 'INSERT_CHAR', lineIdx: posX, columnIdx: posY, char: character, userId: documentAnswer.user.id});
         } else return;
         oldCode = code;
     }
