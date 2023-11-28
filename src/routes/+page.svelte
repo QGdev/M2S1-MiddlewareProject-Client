@@ -70,7 +70,7 @@
                 }
                 index += messageJson.columnIdx;
                 console.log('index', index);
-                console.log('codesplit', codeSplit);
+                console.log('char', messageJson.char);
                 console.log('code: ', code)
                 if (messageJson.type==='INSERT_CHAR') {
                     console.log('INSERT_CHAR')
@@ -86,7 +86,7 @@
         });
 
         codeArea = document.getElementById('code-area') as HTMLTextAreaElement;
-        document.getElementById('code-area')?.addEventListener('keyup', onCodeUpdate);
+        document.getElementById('code-area')?.addEventListener('input', onCodeUpdate);
         
         document.querySelector('.toggle')?.addEventListener('click', function(this: HTMLSpanElement) {
             this.classList.add('animate');
