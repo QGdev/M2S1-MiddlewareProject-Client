@@ -95,18 +95,6 @@
 
         codeArea = document.getElementById("code-area") as HTMLTextAreaElement;
 
-        /*document.addEventListener("keydown", function (event) {
-            if (
-                event.key === "ArrowUp" ||
-                event.key === "ArrowLeft" ||
-                event.key === "ArrowDown" ||
-                event.key === "ArrowRight"
-            ) {
-                console.log("flèche directionnelle préssée");
-                onMoveUpdate();
-            }
-        });*/
-
         document.addEventListener("keydown", function (event) {
             switch (event.key) {
                 case "ArrowUp":
@@ -128,11 +116,37 @@
             }
         });
 
-        //document.addEventListener("keydown", onMoveUpdate);
-
         document
             .getElementById("code-area")
-            ?.addEventListener("input", onCodeUpdate);
+            ?.addEventListener("input", function (event) {
+                console.log("event.data = ", event.data);
+                console.log("event.inputType = ", event.inputType);
+
+                caracteres_before_cursor_before_action =
+                    caracteres_before_cursor_after_action;
+
+                //position du curseur dans le code après que l'instruction ait été faite
+
+                const posX_before =
+                    caracteres_before_cursor_before_action?.length - 1 || 0;
+                const posY_before =
+                    caracteres_before_cursor_before_action[
+                        caracteres_before_cursor_before_action.length - 1
+                    ]?.length || 0;
+
+                if (event.inputType == "insertLineBreak") {
+                    onCodeUpdate("insertLineBreak");
+                } else if (
+                    event.inputType == "deleteContentBackward" &&
+                    posY_before == 0 /*cas où on supprime une ligne*/
+                ) {
+                    //TODO
+                    console.log("tu as appuyé pour delete line break");
+                    onCodeUpdate("deleteLineBreak");
+                } else {
+                    onCodeUpdate("");
+                }
+            });
 
         /*document
             .getElementById("code-area")
@@ -258,28 +272,44 @@
         );*/
     }
 
-    const onCodeUpdate = () => {
+    function onCodeUpdate(inputeventtype /*inputtype*/) {
         caracteres_before_cursor_before_action =
             caracteres_before_cursor_after_action;
 
         const position = codeArea.selectionStart;
-        const tmp = codeArea.value.slice(0, position).split(/\r\n|\r|\n/);
 
         caracteres_before_cursor_after_action = codeArea.value
             .slice(0, position)
             .split(/\r\n|\r|\n/);
 
         //position du curseur dans le code après que l'instruction ait été faite
-        const posX_after =
-            caracteres_before_cursor_after_action?.length - 1 || 0;
-        const posY_after =
-            caracteres_before_cursor_after_action[
+
+        const posX_before =
+            caracteres_before_cursor_before_action?.length - 1 || 0;
+        const posY_before =
+            caracteres_before_cursor_before_action[
                 caracteres_before_cursor_before_action.length - 1
             ]?.length || 0;
-        /*const posX_after = tmp?.length || 0;
-        const posY_after = tmp.pop()?.length || 0;*/
 
-        console.log("tmp : " + tmp);
+        let posX_after;
+        let posY_after;
+
+        if (inputeventtype == "insertLineBreak" /*insert line brk*/) {
+            console.log("Enter préssée");
+            posX_after = caracteres_before_cursor_after_action?.length - 1 || 0;
+            posY_after = 0;
+        } else if (inputeventtype == "deleteLineBreak" /*delete line brk*/) {
+            console.log("delete line brk et backspace préssée");
+            posX_after = posX_before - 1;
+            posY_after =
+                caracteres_before_cursor_after_action[posX_after]?.length || 0; //TODO : fix la valeur de posY_after dans cette condition
+        } else {
+            posX_after = caracteres_before_cursor_after_action?.length - 1 || 0;
+            posY_after =
+                caracteres_before_cursor_after_action[
+                    caracteres_before_cursor_before_action.length - 1
+                ]?.length || 0;
+        }
 
         console.log("codeArea.value = " + codeArea.value);
 
@@ -302,6 +332,9 @@
         );*/
 
         console.log("position curseur dans le textarea : " + position);
+
+        console.log("posX_before : " + posX_before);
+        console.log("posY_before : " + posY_before);
 
         console.log("posX_after : " + posX_after);
         console.log("posY_after : " + posY_after);
@@ -373,7 +406,7 @@
             }
         } else return;
         oldCode = code;
-    };
+    }
 
     const adjustTextareaHeight = () => {
         codeArea.style.height = "auto";
