@@ -99,19 +99,19 @@
             switch (event.key) {
                 case "ArrowUp":
                     console.log("flèche du haut préssée");
-                    onMoveUpdate("Up");
+                    onMoveUpdate("ArrowUp");
                     break;
                 case "ArrowDown":
                     console.log("flèche du bas préssée");
-                    onMoveUpdate("Down");
+                    onMoveUpdate("ArrowDown");
                     break;
                 case "ArrowLeft":
                     console.log("flèche de gauche préssée");
-                    onMoveUpdate("Left");
+                    onMoveUpdate("ArrowLeft");
                     break;
                 case "ArrowRight":
                     console.log("flèche de droite préssée");
-                    onMoveUpdate("Right");
+                    onMoveUpdate("ArrowRight");
                     break;
             }
         });
@@ -147,13 +147,6 @@
                     onCodeUpdate("");
                 }
             });
-
-        /*document
-            .getElementById("code-area")
-            ?.addEventListener("input", function (event) {
-                console.log("input appuyé");
-                console.log("event.key : ", event.key);
-            });*/
 
         document
             .getElementById("code-area")
@@ -215,52 +208,139 @@
     //fonction se lançant quand on change de postion dans le codeArea en appuyant sur une des flèches directionnelles
     //TODO : NE FONCTIONNE PAS ENCORE
     function onMoveUpdate(direction_fleche) {
-        const tmp = direction_fleche;
-        const position = codeArea.selectionStart;
-        caracteres_before_cursor_after_action = codeArea.value
+        caracteres_before_cursor_before_action =
+            caracteres_before_cursor_after_action;
+
+        let position;
+        position = codeArea.selectionStart;
+
+        let caracteres_before_action;
+        caracteres_before_action = codeArea.value
             .slice(0, position)
             .split(/\r\n|\r|\n/);
+        /*caracteres_before_cursor_after_action = codeArea.value
+            .slice(0, position)
+            .split(/\r\n|\r|\n/);*/
 
-        console.log("position : " + position);
+        let all_caracteres;
+        all_caracteres = codeArea.value.slice().split(/\r\n|\r|\n/); //variable affichant tout le code écrit dans le texte area sous forme de ligne représentant dans l'ordre les lignes
+        //console.log("all_caracteres : ", all_caracteres);
+
+        /*console.log(
+            "position avec " + direction_fleche + " préssée : " + position,
+        );*/ //CETTE POSITION EST BIEN CELLE DU CURSEUR DANS LA ZONE DE TEXTE AVANT QU'UNE FLECHE SOIT APPUYEE
+
+        console.log(
+            "FONCTION ONMOVEUPDATE : caracteres_before_action = " +
+                caracteres_before_action,
+        ); //AFFICHE CORRETEMENT CE QUE C'EST CENSE AFFICHER (I.E. tous les caractères avant le curseur AVANT d'avoir appuyé sur une flèche)
+
+        let posX_before_fl;
+        let posY_before_fl;
 
         let posX_after;
         let posY_after;
 
-        posX_after = caracteres_before_cursor_after_action?.length || 0;
-        posY_after =
-            caracteres_before_cursor_after_action[
-                caracteres_before_cursor_before_action.length - 1
-            ]?.length || 0;
+        posX_before_fl = caracteres_before_action?.length - 1 || 0;
 
-        console.log("posX_after initial : " + posX_after);
-        console.log("posY_after initial : " + posY_after);
+        posY_before_fl = caracteres_before_action[posX_before_fl]?.length || 0;
 
         switch (direction_fleche) {
-            case "ArrowLeft":
-                if (posY_after == 0) {
-                    posX_after - 1 < 0 ? 0 : posX_after--;
-                    posY_after =
-                        caracteres_before_cursor_after_action[
-                            caracteres_before_cursor_before_action.length - 1
-                        ]?.length || 0;
+            case "ArrowLeft": //TODO : NE MARCHE PLUS POUR L'INSTANT
+                if (posY_before_fl == 0) {
+                    console.log(
+                        "ArrowLeft préssée et passage à la ligne précédente si elle existe",
+                    );
+                    //posX_before_fl - 1 < 0 ? 0 : posX_after--;
+                    if (posX_before_fl != 0) {
+                        posX_after = posX_before_fl - 1;
+                        posY_after =
+                            caracteres_before_action[posX_after]?.length || 0;
+                    } else {
+                        posX_after = 0;
+                        posY_after = 0;
+                    }
                 } else {
-                    posY_after--;
+                    console.log(
+                        "ArrowLeft préssée et on reste sur la même ligne",
+                    );
+                    posX_after = posX_before_fl;
+                    posY_after = posY_before_fl - 1;
                 }
-            case "test":
                 break;
-            /*case "ArrowUp":
-                    console.log("flèche du haut préssée");
-                    onMoveUpdate("Up");
-                    break;
-                case "ArrowDown":
-                    console.log("flèche du bas préssée");
-                    onMoveUpdate("Down");
-                    break;
-                
+            case "ArrowRight":
+                if (posY_before_fl == all_caracteres[posX_before_fl]?.length) {
+                    console.log(
+                        "ArrowRight préssée et passage à la ligne suivante si elle existe",
+                    );
+                    console.log(
+                        "all_caracteres[%i]?.length : ",
+                        posX_before_fl + 1,
+                        all_caracteres[posX_before_fl + 1]?.length,
+                    );
 
-                    
-                case "ArrowRight":*/
+                    if (
+                        all_caracteres[posX_before_fl + 1]?.length === undefined
+                    ) {
+                        //si la ligne suivante n'existe pas
+                        posX_after = posX_before_fl;
+                        posY_after = posY_before_fl;
+                    } else {
+                        posX_after = posX_before_fl + 1;
+                        posY_after = 0;
+                    }
+                } else {
+                    console.log(
+                        "ArrowRight préssée et on reste sur la même ligne",
+                    );
+                    posX_after = posX_before_fl;
+                    posY_after = posY_before_fl + 1;
+                }
+                break;
+            case "ArrowUp":
+                if (posX_before_fl == 0) {
+                    posX_after = posX_before_fl;
+                    posY_after = posY_before_fl;
+                } else {
+                    if (
+                        posY_before_fl <=
+                        caracteres_before_action[posX_before_fl - 1]?.length
+                    ) {
+                        posX_after = posX_before_fl - 1;
+                        posY_after = posY_before_fl;
+                    } else {
+                        posX_after = posX_before_fl - 1;
+                        posY_after =
+                            caracteres_before_action[posX_before_fl - 1]
+                                ?.length;
+                    }
+                }
+                break;
+            case "ArrowDown": //TODO
+                if (all_caracteres[posX_before_fl + 1]?.length === undefined) {
+                    //on veut aller dans une ligne qui n'existe pas
+                    posX_after = posX_before_fl;
+                    posY_after = posY_before_fl;
+                } else {
+                    if (
+                        posY_before_fl <=
+                        all_caracteres[posX_before_fl + 1]?.length
+                    ) {
+                        posX_after = posX_before_fl + 1;
+                        posY_after = posY_before_fl;
+                    } else {
+                        posX_after = posX_before_fl + 1;
+                        posY_after = all_caracteres[posX_before_fl + 1]?.length;
+                    }
+                }
+                break;
         }
+
+        console.log("posX_before " + direction_fleche + " : " + posX_before_fl);
+        console.log("posY_before " + direction_fleche + " : " + posY_before_fl);
+
+        console.log("posX_after " + direction_fleche + " : " + posX_after);
+        console.log("posY_after " + direction_fleche + " : " + posY_after);
 
         /*console.log(
             "caracteres_before_cursor_after_action : " +
