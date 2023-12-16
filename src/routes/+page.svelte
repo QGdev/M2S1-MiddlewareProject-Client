@@ -45,6 +45,11 @@
     let codeArea: HTMLTextAreaElement;
     let caracteres_before_cursor_before_action: string[] = [];
     let caracteres_before_cursor_after_action: string[] = [];
+    //ci-dessous, les variables globales liées à la position dans le textarea du curseur
+    let posX_before_textarea = 0;
+    let posY_before_textarea = 0;
+    let posX_after_textarea;
+    let posY_after_textarea;
 
     onMount(() => {
         socket = new WebSocket("ws://localhost:8080/ws");
@@ -127,21 +132,25 @@
 
                 //position du curseur dans le code après que l'instruction ait été faite
 
-                const posX_before =
-                    caracteres_before_cursor_before_action?.length - 1 || 0;
-                const posY_before =
-                    caracteres_before_cursor_before_action[
-                        caracteres_before_cursor_before_action.length - 1
-                    ]?.length || 0;
+                posX_before_textarea = posX_after_textarea;
+                posY_before_textarea = posY_after_textarea;
 
                 if (event.inputType == "insertLineBreak") {
                     onCodeUpdate("insertLineBreak");
                 } else if (
                     event.inputType == "deleteContentBackward" &&
-                    posY_before == 0 /*cas où on supprime une ligne*/
+                    posY_before_textarea == 0 /*cas où on supprime une ligne*/
                 ) {
-                    //TODO
                     console.log("tu as appuyé pour delete line break");
+                    console.log(
+                        "posX_before_textarea dans le listener input si il y a un delete : " +
+                            posX_before_textarea,
+                    );
+                    console.log(
+                        "posY_before_textarea dans le listener input si il y a un delete : " +
+                            posY_before_textarea,
+                    );
+
                     onCodeUpdate("deleteLineBreak");
                 } else {
                     onCodeUpdate("");
@@ -199,14 +208,20 @@
             "caracteres_before_cursor_after_action : " +
                 caracteres_before_cursor_after_action,
         );
+
+        posX_before_textarea = caracteres_before_cursor_after_action.length - 1;
+        posY_before_textarea =
+            caracteres_before_cursor_after_action[posX_before_textarea]?.length;
+
         console.log(
-            "caracteres_before_cursor_after_action.length : " +
-                caracteres_before_cursor_after_action.length,
+            "posX_before_textarea après avoir cliqué : " + posX_before_textarea,
+        );
+        console.log(
+            "posY_before_textarea après avoir cliqué : " + posY_before_textarea,
         );
     };
 
     //fonction se lançant quand on change de postion dans le codeArea en appuyant sur une des flèches directionnelles
-    //TODO : NE FONCTIONNE PAS ENCORE
     function onMoveUpdate(direction_fleche) {
         caracteres_before_cursor_before_action =
             caracteres_before_cursor_after_action;
@@ -218,138 +233,136 @@
         caracteres_before_action = codeArea.value
             .slice(0, position)
             .split(/\r\n|\r|\n/);
-        /*caracteres_before_cursor_after_action = codeArea.value
-            .slice(0, position)
-            .split(/\r\n|\r|\n/);*/
 
         let all_caracteres;
         all_caracteres = codeArea.value.slice().split(/\r\n|\r|\n/); //variable affichant tout le code écrit dans le texte area sous forme de ligne représentant dans l'ordre les lignes
         //console.log("all_caracteres : ", all_caracteres);
 
-        /*console.log(
-            "position avec " + direction_fleche + " préssée : " + position,
-        );*/ //CETTE POSITION EST BIEN CELLE DU CURSEUR DANS LA ZONE DE TEXTE AVANT QU'UNE FLECHE SOIT APPUYEE
+        //CETTE POSITION EST BIEN CELLE DU CURSEUR DANS LA ZONE DE TEXTE AVANT QU'UNE FLECHE SOIT APPUYEE
 
         console.log(
             "FONCTION ONMOVEUPDATE : caracteres_before_action = " +
                 caracteres_before_action,
         ); //AFFICHE CORRETEMENT CE QUE C'EST CENSE AFFICHER (I.E. tous les caractères avant le curseur AVANT d'avoir appuyé sur une flèche)
 
-        let posX_before_fl;
-        let posY_before_fl;
+        posX_before_textarea = caracteres_before_action?.length - 1 || 0;
 
-        let posX_after;
-        let posY_after;
-
-        posX_before_fl = caracteres_before_action?.length - 1 || 0;
-
-        posY_before_fl = caracteres_before_action[posX_before_fl]?.length || 0;
+        posY_before_textarea =
+            caracteres_before_action[posX_before_textarea]?.length || 0;
 
         switch (direction_fleche) {
-            case "ArrowLeft": //TODO : NE MARCHE PLUS POUR L'INSTANT
-                if (posY_before_fl == 0) {
+            case "ArrowLeft":
+                if (posY_before_textarea == 0) {
                     console.log(
                         "ArrowLeft préssée et passage à la ligne précédente si elle existe",
                     );
-                    //posX_before_fl - 1 < 0 ? 0 : posX_after--;
-                    if (posX_before_fl != 0) {
-                        posX_after = posX_before_fl - 1;
-                        posY_after =
-                            caracteres_before_action[posX_after]?.length || 0;
+                    if (posX_before_textarea != 0) {
+                        posX_after_textarea = posX_before_textarea - 1;
+                        posY_after_textarea =
+                            caracteres_before_action[posX_after_textarea]
+                                ?.length || 0;
                     } else {
-                        posX_after = 0;
-                        posY_after = 0;
+                        posX_after_textarea = 0;
+                        posY_after_textarea = 0;
                     }
                 } else {
                     console.log(
                         "ArrowLeft préssée et on reste sur la même ligne",
                     );
-                    posX_after = posX_before_fl;
-                    posY_after = posY_before_fl - 1;
+                    posX_after_textarea = posX_before_textarea;
+                    posY_after_textarea = posY_before_textarea - 1;
                 }
                 break;
             case "ArrowRight":
-                if (posY_before_fl == all_caracteres[posX_before_fl]?.length) {
+                if (
+                    posY_before_textarea ==
+                    all_caracteres[posX_before_textarea]?.length
+                ) {
                     console.log(
                         "ArrowRight préssée et passage à la ligne suivante si elle existe",
                     );
                     console.log(
                         "all_caracteres[%i]?.length : ",
-                        posX_before_fl + 1,
-                        all_caracteres[posX_before_fl + 1]?.length,
+                        posX_before_textarea + 1,
+                        all_caracteres[posX_before_textarea + 1]?.length,
                     );
 
                     if (
-                        all_caracteres[posX_before_fl + 1]?.length === undefined
+                        all_caracteres[posX_before_textarea + 1]?.length ===
+                        undefined
                     ) {
                         //si la ligne suivante n'existe pas
-                        posX_after = posX_before_fl;
-                        posY_after = posY_before_fl;
+                        posX_after_textarea = posX_before_textarea;
+                        posY_after_textarea = posY_before_textarea;
                     } else {
-                        posX_after = posX_before_fl + 1;
-                        posY_after = 0;
+                        posX_after_textarea = posX_before_textarea + 1;
+                        posY_after_textarea = 0;
                     }
                 } else {
                     console.log(
                         "ArrowRight préssée et on reste sur la même ligne",
                     );
-                    posX_after = posX_before_fl;
-                    posY_after = posY_before_fl + 1;
+                    posX_after_textarea = posX_before_textarea;
+                    posY_after_textarea = posY_before_textarea + 1;
                 }
                 break;
             case "ArrowUp":
-                if (posX_before_fl == 0) {
-                    posX_after = posX_before_fl;
-                    posY_after = posY_before_fl;
+                if (posX_before_textarea == 0) {
+                    posX_after_textarea = posX_before_textarea;
+                    posY_after_textarea = posY_before_textarea;
                 } else {
                     if (
-                        posY_before_fl <=
-                        caracteres_before_action[posX_before_fl - 1]?.length
+                        posY_before_textarea <=
+                        caracteres_before_action[posX_before_textarea - 1]
+                            ?.length
                     ) {
-                        posX_after = posX_before_fl - 1;
-                        posY_after = posY_before_fl;
+                        posX_after_textarea = posX_before_textarea - 1;
+                        posY_after_textarea = posY_before_textarea;
                     } else {
-                        posX_after = posX_before_fl - 1;
-                        posY_after =
-                            caracteres_before_action[posX_before_fl - 1]
+                        posX_after_textarea = posX_before_textarea - 1;
+                        posY_after_textarea =
+                            caracteres_before_action[posX_before_textarea - 1]
                                 ?.length;
                     }
                 }
                 break;
-            case "ArrowDown": //TODO
-                if (all_caracteres[posX_before_fl + 1]?.length === undefined) {
+            case "ArrowDown":
+                if (
+                    all_caracteres[posX_before_textarea + 1]?.length ===
+                    undefined
+                ) {
                     //on veut aller dans une ligne qui n'existe pas
-                    posX_after = posX_before_fl;
-                    posY_after = posY_before_fl;
+                    posX_after_textarea = posX_before_textarea;
+                    posY_after_textarea = posY_before_textarea;
                 } else {
                     if (
-                        posY_before_fl <=
-                        all_caracteres[posX_before_fl + 1]?.length
+                        posY_before_textarea <=
+                        all_caracteres[posX_before_textarea + 1]?.length
                     ) {
-                        posX_after = posX_before_fl + 1;
-                        posY_after = posY_before_fl;
+                        posX_after_textarea = posX_before_textarea + 1;
+                        posY_after_textarea = posY_before_textarea;
                     } else {
-                        posX_after = posX_before_fl + 1;
-                        posY_after = all_caracteres[posX_before_fl + 1]?.length;
+                        posX_after_textarea = posX_before_textarea + 1;
+                        posY_after_textarea =
+                            all_caracteres[posX_before_textarea + 1]?.length;
                     }
                 }
                 break;
         }
 
-        console.log("posX_before " + direction_fleche + " : " + posX_before_fl);
-        console.log("posY_before " + direction_fleche + " : " + posY_before_fl);
-
-        console.log("posX_after " + direction_fleche + " : " + posX_after);
-        console.log("posY_after " + direction_fleche + " : " + posY_after);
-
-        /*console.log(
-            "caracteres_before_cursor_after_action : " +
-                caracteres_before_cursor_after_action,
+        console.log(
+            "posX_before " + direction_fleche + " : " + posX_before_textarea,
         );
         console.log(
-            "caracteres_before_cursor_after_action.length : " +
-                caracteres_before_cursor_after_action.length,
-        );*/
+            "posY_before " + direction_fleche + " : " + posY_before_textarea,
+        );
+
+        console.log(
+            "posX_after " + direction_fleche + " : " + posX_after_textarea,
+        );
+        console.log(
+            "posY_after " + direction_fleche + " : " + posY_after_textarea,
+        );
     }
 
     function onCodeUpdate(inputeventtype /*inputtype*/) {
@@ -364,91 +377,65 @@
 
         //position du curseur dans le code après que l'instruction ait été faite
 
-        const posX_before =
-            caracteres_before_cursor_before_action?.length - 1 || 0;
-        const posY_before =
-            caracteres_before_cursor_before_action[
-                caracteres_before_cursor_before_action.length - 1
-            ]?.length || 0;
-
-        let posX_after;
-        let posY_after;
-
         if (inputeventtype == "insertLineBreak" /*insert line brk*/) {
             console.log("Enter préssée");
-            posX_after = caracteres_before_cursor_after_action?.length - 1 || 0;
-            posY_after = 0;
+            posX_after_textarea =
+                caracteres_before_cursor_after_action?.length - 1 || 0;
+            posY_after_textarea = 0;
         } else if (inputeventtype == "deleteLineBreak" /*delete line brk*/) {
             console.log("delete line brk et backspace préssée");
-            posX_after = posX_before - 1;
-            posY_after =
-                caracteres_before_cursor_after_action[posX_after]?.length || 0; //TODO : fix la valeur de posY_after dans cette condition
+            posX_after_textarea = posX_before_textarea - 1;
+            posY_after_textarea =
+                caracteres_before_cursor_after_action[posX_after_textarea]
+                    ?.length || 0;
+
+            console.log(
+                "posX_after_textarea dans le codeUpdate input si il y a un delete : " +
+                    posX_after_textarea,
+            );
+            console.log(
+                "posY_after_textarea dans le codeUpdate input si il y a un delete : " +
+                    posY_after_textarea,
+            );
         } else {
-            posX_after = caracteres_before_cursor_after_action?.length - 1 || 0;
-            posY_after =
+            posX_after_textarea =
+                caracteres_before_cursor_after_action?.length - 1 || 0;
+            posY_after_textarea =
                 caracteres_before_cursor_after_action[
                     caracteres_before_cursor_before_action.length - 1
                 ]?.length || 0;
         }
 
-        console.log("codeArea.value = " + codeArea.value);
+        console.log("posX_before_textarea : " + posX_before_textarea);
+        console.log("posY_before_textarea : " + posY_before_textarea);
 
-        /*console.log(
-            "caracteres_before_cursor_before_action : " +
-                caracteres_before_cursor_before_action,
-        );
-        console.log(
-            "caracteres_before_cursor_before_action.length : " +
-                caracteres_before_cursor_before_action.length,
-        );
-
-        console.log(
-            "caracteres_before_cursor_after_action : " +
-                caracteres_before_cursor_after_action,
-        );
-        console.log(
-            "caracteres_before_cursor_after_action.length : " +
-                caracteres_before_cursor_after_action.length,
-        );*/
-
-        console.log("position curseur dans le textarea : " + position);
-
-        console.log("posX_before : " + posX_before);
-        console.log("posY_before : " + posY_before);
-
-        console.log("posX_after : " + posX_after);
-        console.log("posY_after : " + posY_after);
+        console.log("posX_after_textarea : " + posX_after_textarea);
+        console.log("posY_after_textarea : " + posY_after_textarea);
 
         if (oldCode.length > code.length) {
-            //ATTENTION : NE MARCHE PAS ENCORE
-            if (
-                caracteres_before_cursor_before_action[
-                    caracteres_before_cursor_before_action.length - 1
-                ].length == 0 &&
-                caracteres_before_cursor_before_action.length > 1
-            ) {
+            if (posY_before_textarea == 0) {
                 console.log({
                     type: "DELETE_LINE_BRK",
-                    lineIdx: posX_after,
-                    columnIdx: posY_after,
+                    lineIdx: posX_after_textarea,
+                    columnIdx: posY_after_textarea,
                     userId: documentAnswer.user.id,
                 });
                 sendMessage({
                     type: "DELETE_LINE_BRK",
-                    lineIdx: posX_after,
+                    lineIdx: posX_after_textarea,
                     userId: documentAnswer.user.id,
                 });
             } else {
                 console.log({
                     type: "DELETE_CHAR",
-                    lineIdx: posX_after,
-                    columnIdx: posY_after,
+                    lineIdx: posX_after_textarea,
+                    columnIdx: posY_after_textarea,
                     userId: documentAnswer.user.id,
                 });
                 sendMessage({
                     type: "DELETE_CHAR",
-                    lineIdx: posX_after,
-                    columnIdx: posY_after,
+                    lineIdx: posX_after_textarea,
+                    columnIdx: posY_after_textarea,
                     userId: documentAnswer.user.id,
                 });
             }
@@ -457,29 +444,29 @@
             if (character == "\n") {
                 console.log({
                     type: "INSERT_LINE_BRK",
-                    lineIdx: posX_after,
-                    columnIdx: posY_after,
+                    lineIdx: posX_after_textarea,
+                    columnIdx: posY_after_textarea,
                     char: character,
                     userId: documentAnswer.user.id,
                 });
                 sendMessage({
                     type: "INSERT_LINE_BRK",
-                    lineIdx: posX_after,
-                    columnIdx: posY_after,
+                    lineIdx: posX_after_textarea,
+                    columnIdx: posY_after_textarea,
                     userId: documentAnswer.user.id,
                 });
             } else {
                 console.log({
                     type: "INSERT_CHAR",
-                    lineIdx: posX_after,
-                    columnIdx: posY_after,
+                    lineIdx: posX_after_textarea,
+                    columnIdx: posY_after_textarea,
                     char: character,
                     userId: documentAnswer.user.id,
                 });
                 sendMessage({
                     type: "INSERT_CHAR",
-                    lineIdx: posX_after,
-                    columnIdx: posY_after,
+                    lineIdx: posX_after_textarea,
+                    columnIdx: posY_after_textarea,
                     char: character,
                     userId: documentAnswer.user.id,
                 });
