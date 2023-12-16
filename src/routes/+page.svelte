@@ -87,13 +87,16 @@
                         code.slice(index);
                 } else if (messageJson.type === "INSERT_LINE_BRK") {
                     console.log("INSERT_LINE_BRK");
-                    //TODO
+                    code =
+                        code.slice(0, index) +
+                        messageJson.char +
+                        code.slice(index);
                 } else if (messageJson.type === "DELETE_CHAR") {
                     console.log("DELETE_CHAR");
                     code = code.slice(0, index) + code.slice(index + 1);
                 } else if (messageJson.type === "DELETE_LINE_BREAK") {
                     console.log("DELETE_LINE_BREAK");
-                    //TODO
+                    code = code.slice(0, index) + code.slice(index + 1);
                 }
             }
         });
@@ -376,6 +379,11 @@
             .split(/\r\n|\r|\n/);
 
         //position du curseur dans le code après que l'instruction ait été faite
+
+        /*let all_caracteres;
+        all_caracteres = codeArea.value.slice().split(/\r\n|\r|\n/);*/
+        console.log("codeArea.value : " + codeArea.value);
+        console.log("codeArea.value.length : " + codeArea.value.length);
 
         if (inputeventtype == "insertLineBreak" /*insert line brk*/) {
             console.log("Enter préssée");
