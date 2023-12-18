@@ -64,11 +64,11 @@
                 const codeSplit = code.split(/\r\n|\r|\n/);
                 let index: number = 0;
                 let tmp: string = '';
-                for (let i=1; i<messageJson.lineIdx; i++) {
+                for (let i=0; i<messageJson.lineIdx; i++) {
                     index += codeSplit[i].length + 1;
                     tmp += codeSplit[i] + ' ';
                 }
-                index += messageJson.columnIdx;
+                if (messageJson.type!=='DELETE_LINE_BRK') index += messageJson.columnIdx;
                 console.log('index', index);
                 console.log('char', messageJson.char);
                 console.log('code: ', code)
@@ -78,9 +78,12 @@
                 } else if (messageJson.type==='DELETE_CHAR') {
                     console.log('DELETE_CHAR')
                     code = code.slice(0, index) + code.slice(index + 1);
-                } else if (messageJson.type==='DELETE_LINE_BREAK') {
+                } else if (messageJson.type==='DELETE_LINE_BRK') {
                     console.log('DELETE_LINE_BREAK')
-                    //TODO
+                    code = code.slice(0, index) + code.slice(index + 1);
+                } else if (messageJson.type==='INSERT_LINE_BRK') {
+                    console.log('INSERT_LINE_BRK')
+                    code = code.slice(0, index) + '\n' + code.slice(index);
                 }
             }
         });
@@ -111,22 +114,29 @@
     });
 
     const sendMessage = (messageData: ConnectMessage|InsertCharMessage|InsertLineBreakMessage|DeleteLineBreakMessage|DeleteCharMessage) => {
+        console.log(messageData)
         socket.send(JSON.stringify(messageData));
     }
 
     const onCodeUpdate = () => {
         const position = codeArea.selectionStart;
         const tmp = codeArea.value.slice(0, position).split(/\r\n|\r|\n/);
-        const posX = tmp?.length || 0;
+        const posX = tmp?.length - 1 || 0;
         const posY = tmp.pop()?.length || 0;
 
         if (oldCode.length > code.length) {
-            console.log({type: 'DELETE_CHAR', lineIdx: posX, columnIdx: posY, userId: documentAnswer.user.id});
-            sendMessage({type: 'DELETE_CHAR', lineIdx: posX, columnIdx: posY, userId: documentAnswer.user.id});
+            if (oldCode.split(/\r\n|\r|\n/).length > code.split(/\r\n|\r|\n/).length) {
+                sendMessage({type: 'DELETE_LINE_BRK', lineIdx: posX + 1, userId: documentAnswer.user.id});
+            } else {
+                sendMessage({type: 'DELETE_CHAR', lineIdx: posX, columnIdx: posY, userId: documentAnswer.user.id});
+            }
         } else if (oldCode.length < code.length) {
-            const character = codeArea.value[position - 1];
-            console.log({type: 'INSERT_CHAR', lineIdx: posX, columnIdx: posY, char: character, userId: documentAnswer.user.id});
-            sendMessage({type: 'INSERT_CHAR', lineIdx: posX, columnIdx: posY, char: character, userId: documentAnswer.user.id});
+            if (posY === 0) {
+                sendMessage({type: 'INSERT_LINE_BRK', lineIdx: posX - 1, columnIdx: tmp.pop()?.length || 0, userId: documentAnswer.user.id});
+            } else {
+                const character = codeArea.value[position - 1];
+                sendMessage({type: 'INSERT_CHAR', lineIdx: posX, columnIdx: posY - 1, char: character, userId: documentAnswer.user.id});
+            }
         } else return;
         oldCode = code;
     }
