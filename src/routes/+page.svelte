@@ -17,6 +17,8 @@
         DocumentOperationAnswer,
     } from "../types";
 
+    let apiUrl: string;
+
     enum Theme {
         LIGHT = 'light',
         DARK = 'dark'
@@ -45,7 +47,8 @@
     let codeArea: HTMLTextAreaElement;
 
     onMount(() => {
-        socket = new WebSocket('ws://localhost:8080/ws');
+        apiUrl = `${window.location.hostname}:8080`;
+        socket = new WebSocket(`ws://${apiUrl}/ws`);
         socket.addEventListener('open', () => {
             toast.push('Connected to server');
         });
@@ -223,14 +226,14 @@
     }
 
     const createDocument = async (docName: string, userName: string): Promise<DocumentOperationAnswer> => {
-        const response = await fetch(`http://localhost:8080/create?docName=${docName}&userName=${userName}`, {method: 'POST'});
+        const response = await fetch(`http://${apiUrl}/create?docName=${docName}&userName=${userName}`, {method: 'POST'});
         const data: DocumentOperationAnswer = await response.json();
         console.log(data);
         return data;
     }
 
     const joinDocument = async (docId: string, userName: string): Promise<DocumentOperationAnswer> => {
-        const response = await fetch(`http://localhost:8080/join?docId=${docId}&userName=${userName}`, {method: 'POST'});
+        const response = await fetch(`http://${apiUrl}/join?docId=${docId}&userName=${userName}`, {method: 'POST'});
         const data: DocumentOperationAnswer = await response.json();
         console.log(data);
         return data;
@@ -304,14 +307,30 @@
             <p class="p-1 bg-blue-100 dark:bg-gray-800 rounded-r-lg border-y border-r border-slate-400 dark:border-gray-600 dark:text-white select-none">.md</p>
         </div>
         <div class="flex h-full items-center space-x-2">
+            <span class="toggle dark:text-white flex items-center justify-center"></span>
             <div class="group relative flex justify-center whitespace-nowrap py-1 px-3 dark:text-white bg-blue-100 dark:bg-slate-700 rounded-lg border border-slate-400 dark:border-gray-600">
                 <p class="font-semibold text-lg select-none">i</p>
-                <div class="group-hover:block hidden absolute top-8 p-2 bg-blue-100 dark:bg-slate-600 rounded-lg border border-gray-300 dark:border-gray-500">
+                <div class="group-hover:block hidden absolute top-12 p-2 bg-blue-100 dark:bg-slate-600 rounded-lg border border-gray-300 dark:border-gray-500">
                     <p class="">Number of words: {nbOfWords}</p>
                     <p class="">Number of characters: {nbOfChars}</p>
                 </div>
             </div>
-            <span class="toggle dark:text-white flex items-center justify-center"></span>
+            <div class="group relative flex justify-center whitespace-nowrap">
+                <button class="hover:bg-blue-50 p-1 bg-blue-100 dark:bg-slate-700 dark:fill-slate-300 border rounded-lg active:scale-90 border-slate-400 dark:border-gray-600 transition-all duration-100" on:click={() => {navigator.clipboard.writeText(documentAnswer.document.id)}}>
+                    <svg class="h-7 select-none" viewBox="0 0 24 24"> <path d="M 4 2 C 2.895 2 2 2.895 2 4 L 2 17 C 2 17.552 2.448 18 3 18 C 3.552 18 4 17.552 4 17 L 4 4 L 17 4 C 17.552 4 18 3.552 18 3 C 18 2.448 17.552 2 17 2 L 4 2 z M 8 6 C 6.895 6 6 6.895 6 8 L 6 20 C 6 21.105 6.895 22 8 22 L 20 22 C 21.105 22 22 21.105 22 20 L 22 8 C 22 6.895 21.105 6 20 6 L 8 6 z M 8 8 L 20 8 L 20 20 L 8 20 L 8 8 z"/></svg>
+                </button>
+                <div class="group-hover:block hidden absolute top-12 p-2 bg-blue-100 dark:bg-slate-600 rounded-lg border border-gray-300 dark:border-gray-500 z-50">
+                    <p class="dark:text-white">Copy document id</p>
+                </div>
+            </div>
+            <div class="group relative flex justify-center whitespace-nowrap">
+                <button class="hover:bg-blue-50 p-1 bg-blue-100 dark:bg-slate-700 dark:fill-slate-300 border rounded-lg active:scale-90 border-slate-400 dark:border-gray-600 transition-all duration-100" on:click={downloadCode}>
+                    <svg class="h-7 select-none" viewBox="0 0 16 16"><path d="M7 2v7.293L4.352 6.648l-.704.704L7.5 11.207l3.855-3.855-.71-.704L8 9.293V2ZM3 13v1h9v-1Z"/></svg>
+                </button>
+                <div class="group-hover:block hidden absolute top-12 p-2 bg-blue-100 dark:bg-slate-600 rounded-lg border border-gray-300 dark:border-gray-500 z-50">
+                    <p class="dark:text-white">Download document</p>
+                </div>
+            </div>
             <div class="flex p-1 space-x-2 bg-blue-100 dark:bg-slate-700 rounded-lg border border-slate-400 dark:border-gray-600">
                 <button class="hover:bg-red-500 p-0.5 bg-opacity-30 hover:bg-opacity-30 rounded-full transition-all duration-100 active:scale-90 {selectedViewMode===ViewMode.CODE && 'bg-red-500'}" on:click={() => {selectedViewMode=ViewMode.CODE}}>
                     <svg class="fill-red-500 h-6 select-none" viewBox="0 0 16 16"><path d="m10.043 2.05-5.004 11.5.922.4 4.996-11.5ZM3.227 5.07.997 8l2.23 2.926.796-.602L2.253 8l1.77-2.32Zm9.546 0-.796.61L13.747 8l-1.77 2.324.796.602L15.003 8Z"/></svg>
@@ -323,12 +342,6 @@
                     <svg class="fill-green-500 h-6 select-none" viewBox="0 0 16 16"><path d="M2.5 2C1.677 2 1 2.677 1 3.5v9c0 .823.677 1.5 1.5 1.5h11c.823 0 1.5-.677 1.5-1.5v-9c0-.823-.677-1.5-1.5-1.5h-11zm0 1h11c.281 0 .5.219.5.5V4H2v-.5c0-.281.219-.5.5-.5zM2 5h12v7.5c0 .281-.219.5-.5.5h-11a.493.493 0 0 1-.5-.5V5zm1.5 2a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 0-.5-.5h-3zM8 7v1h5V7H8zM4 8h2v3H4V8zm4 1v1h5V9H8zm0 2v1h5v-1H8z"/></svg>
                 </button>
             </div>
-            <button class="hover:bg-blue-50 p-1 bg-blue-100 dark:bg-slate-700 dark:fill-slate-300 border rounded-lg active:scale-90 border-slate-400 dark:border-gray-600 transition-all duration-100" on:click={uploadCode}>
-                <svg class="h-7 select-none" viewBox="0 0 16 16"><path d="M7.5 1.793 3.648 5.648l.704.704L7 3.707V11h1V3.707l2.645 2.645.71-.704ZM3 13v1h9v-1Z"/></svg>
-            </button>
-            <button class="hover:bg-blue-50 p-1 bg-blue-100 dark:bg-slate-700 dark:fill-slate-300 border rounded-lg active:scale-90 border-slate-400 dark:border-gray-600 transition-all duration-100" on:click={downloadCode}>
-                <svg class="h-7 select-none" viewBox="0 0 16 16"><path d="M7 2v7.293L4.352 6.648l-.704.704L7.5 11.207l3.855-3.855-.71-.704L8 9.293V2ZM3 13v1h9v-1Z"/></svg>
-            </button>
         </div>
     </div>
     <div class="flex h-[95vh] w-full bg-blue-400 dark:[color-scheme:dark]">
