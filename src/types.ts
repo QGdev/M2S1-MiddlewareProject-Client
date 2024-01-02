@@ -43,6 +43,11 @@ export interface ChangeDocNameMessage {
 	userId: string,
 }
 
+export interface User {
+	userId: string,
+	userName: string,
+}
+
 export interface DocumentOperationAnswer {
 	document: {
 		id: string,
