@@ -77,6 +77,7 @@
             wordWrapColumn: 80,
             scrollBeyondLastLine: false,
             fixedOverflowWidgets: true,
+            quickSuggestions: false,
             minimap: {
                 enabled: false,
             },
