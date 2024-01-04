@@ -101,7 +101,14 @@
     });
 
     onMount(() => {
-        apiUrl = `${window.location.hostname}:8080`;
+        //  Detect if we are in production or development mode
+        if (process.env.NODE_ENV === 'production') {
+            apiUrl = `${window.location.hostname}:${window.location.port}`;
+        } else {
+            console.log('Development mode detected');
+            apiUrl = `${window.location.hostname}:8080`;
+        }
+        
         socket = new WebSocket(`ws://${apiUrl}/ws`);
         socket.addEventListener('open', () => {
             toast.push('Connected to server');
@@ -295,14 +302,14 @@
     }
 
     const createDocument = async (docName: string, userName: string): Promise<DocumentOperationAnswer> => {
-        const response = await fetch(`http://${apiUrl}/create?docName=${docName}&userName=${userName}`, {method: 'POST'});
+        const response = await fetch(`http://${apiUrl}/api/create?docName=${docName}&userName=${userName}`, {method: 'POST'});
         const data: DocumentOperationAnswer = await response.json();
         console.log(data);
         return data;
     }
 
     const joinDocument = async (docId: string, userName: string): Promise<DocumentOperationAnswer> => {
-        const response = await fetch(`http://${apiUrl}/join?docId=${docId}&userName=${userName}`, {method: 'POST'});
+        const response = await fetch(`http://${apiUrl}/api/join?docId=${docId}&userName=${userName}`, {method: 'POST'});
         const data: DocumentOperationAnswer = await response.json();
         console.log(data);
         return data;
