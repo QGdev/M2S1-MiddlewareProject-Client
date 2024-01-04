@@ -78,6 +78,9 @@
             scrollBeyondLastLine: false,
             fixedOverflowWidgets: true,
             quickSuggestions: false,
+            tabSize: 1,
+            autoIndent: 'none',
+            trimAutoWhitespace: false,
             minimap: {
                 enabled: false,
             },
