@@ -7,14 +7,16 @@
     import {onDestroy, onMount} from "svelte";
     import {fade, fly} from "svelte/transition";
     import {cubicOut} from "svelte/easing";
-    import { SvelteToast ,toast } from "@zerodevx/svelte-toast";
+    import {SvelteToast, toast} from "@zerodevx/svelte-toast";
     import type {
+        ChangeDocNameMessage,
         ConnectMessage,
-        InsertCharMessage,
-        InsertLineBreakMessage,
         DeleteCharMessage,
         DeleteLineBreakMessage,
-        DocumentOperationAnswer, ChangeDocNameMessage, User,
+        DocumentOperationAnswer,
+        InsertCharMessage,
+        InsertLineBreakMessage,
+        User,
     } from "../types";
     import IconBadge from "./IconBadge.svelte";
     import type * as Monaco from 'monaco-editor/esm/vs/editor/editor.api';
@@ -67,6 +69,7 @@
             }
         })
 
+        // Monaco Editor settings
         editor = monaco.editor.create(editorContainer, {
             language: 'markdown',
             theme: theme === Theme.LIGHT ? 'vs' : 'dark',
@@ -103,6 +106,9 @@
         editor?.dispose();
     });
 
+    /**
+     * Function called at the start of the application.
+     */
     onMount(() => {
         //  Detect if we are in production or development mode
         if (process.env.NODE_ENV === 'production') {
@@ -111,7 +117,8 @@
             console.log('Development mode detected');
             apiUrl = `${window.location.hostname}:8080`;
         }
-        
+
+        // Connect to the WebSocket server
         socket = new WebSocket(`ws://${apiUrl}/ws`);
         socket.addEventListener('open', () => {
             toast.push('Connected to server');
@@ -119,10 +126,13 @@
         socket.addEventListener('close', () => {
             toast.push('Disconnected from server', {classes: ['error']});
         });
+
+        // Listen to server messages
         socket.addEventListener('message', (event) => {
             console.log('Message from server ', JSON.parse(event.data));
             const messageJson = JSON.parse(event.data);
 
+            // Update the list of connected users when a user join or leave the document
             if (messageJson.type==='CONNECT' && messageJson.userName) {
                 connectedUser = messageJson.users;
             }
@@ -131,50 +141,53 @@
                 connectedUser = connectedUser.filter((user: User) => user.userId !== messageJson.userId);
             }
 
+            // If the document name is evaluated as invalid by the server, we reset the document name to the previous one
             if (messageJson.type==='ERROR' && messageJson.message==='New document name is not valid') {
                 docName = oldDocName;
                 toast.push('New document name is not valid', {classes: ['error']});
                 return;
             }
 
+            // For the joining user, we update the document name and the code
+            if (messageJson.userId === documentAnswer.user.id && messageJson.type==='CONNECT' && messageJson.docName && messageJson.content) {
+                docName = messageJson.docName;
+                code = messageJson.content;
+                oldCode = code;
+                editor.setValue(code);
+                return;
+            }
+
+            // For other users, we update the code according to the action performed by the user
             if (messageJson.userId !== documentAnswer.user.id) {
                 if (messageJson.type==='CONNECT') {
-                    console.log('CONNECT')
                     toast.push(`${messageJson.userName} joined the document`);
                     return;
                 } else if (messageJson.type==='DISCONNECT'){
-                    console.log('DISCONNECT')
                     toast.push(`${messageJson.userName} left the document`);
                     return;
                 } else if (messageJson.type==='CHANGE_DOC_NAME') {
-                    console.log('CHANGE_DOC_NAME')
                     docName = messageJson.newName;
                     return;
                 }
+
                 const codeSplit = code.split(/\r\n|\r|\n/);
                 let index: number = 0;
-                let tmp: string = '';
                 for (let i=0; i<messageJson.lineIdx; i++) {
                     index += codeSplit[i].length + 1;
-                    tmp += codeSplit[i] + ' ';
                 }
                 if (messageJson.type!=='DELETE_LINE_BRK') index += messageJson.columnIdx;
-                console.log('index', index);
-                console.log('char', messageJson.char);
-                console.log('code: ', code)
+
+                // To update the code, we simply slice the string at the right position and insert/delete the character/line break
                 if (messageJson.type==='INSERT_CHAR') {
-                    console.log('INSERT_CHAR')
                     code = code.slice(0, index) + messageJson.char + code.slice(index);
                 } else if (messageJson.type==='DELETE_CHAR') {
-                    console.log('DELETE_CHAR')
                     code = code.slice(0, index) + code.slice(index + 1);
                 } else if (messageJson.type==='DELETE_LINE_BRK') {
-                    console.log('DELETE_LINE_BREAK')
                     code = code.slice(0, index-1) + code.slice(index);
                 } else if (messageJson.type==='INSERT_LINE_BRK') {
-                    console.log('INSERT_LINE_BRK')
                     code = code.slice(0, index) + '\n' + code.slice(index);
                 }
+                oldCode = code;
                 const cursorPosition = editor.getPosition();
                 editor.setValue(code);
                 editor.setPosition(cursorPosition || {lineNumber: 1, column: 1});
@@ -207,16 +220,22 @@
         }
     });
 
+    /**
+     * Send a message to the server through the WebSocket connection.
+     * @param messageData The message to send.
+     */
     const sendMessage = (messageData: ConnectMessage|InsertCharMessage|InsertLineBreakMessage|DeleteLineBreakMessage|DeleteCharMessage|ChangeDocNameMessage) => {
-        console.log(messageData)
         socket.send(JSON.stringify(messageData));
         socket.onerror = (error) => {
-            console.log(`[error] ${error.message}`);
+            console.error(`[error] ${error.message}`);
         };
     }
 
+    /**
+     * Function called each time the user types in the editor.
+     * Determine the action performed by the user and send the corresponding message to the server.
+     */
     const onCodeUpdate = () => {
-        console.log(code)
         code = editor.getValue();
         const position = editor.getPosition();
         const posX = position?.lineNumber ? position.lineNumber - 1 : 0;
@@ -248,6 +267,9 @@
         pausable: true,
     };
 
+    /**
+     * Markdown parser, using Marked and Highlight.js.
+     */
     const marked = new Marked(
             markedHighlight({
                 langPrefix: 'hljs language-',
@@ -258,8 +280,11 @@
             })
     );
 
+    /**
+     * Custom renderer for the Markdown parser.
+     * Used to add a custom window to the code blocks.
+     */
     const renderer = new marked.Renderer();
-
     renderer.code = (code, language) => {
         return `
             <div class="flex flex-col my-4">
@@ -282,7 +307,7 @@
     $: nbOfChars = code.length;
 
     /**
-     * @description Download the Markdown code as a file
+     * Download the Markdown code as a file.
      */
     const downloadCode = () => {
         const element = document.createElement('a');
@@ -293,6 +318,9 @@
         element.click();
     }
 
+    /**
+     * Change the document name when the user click outside the input.
+     */
     const onDocNameInputBlur = () => {
         if (!documentNameForm) documentNamePlaceholder = 'Please enter a document title';
         const messageData: ChangeDocNameMessage = {
@@ -304,24 +332,55 @@
         sendMessage(messageData);
     }
 
-    const createDocument = async (docName: string, userName: string): Promise<DocumentOperationAnswer> => {
-        const response = await fetch(`http://${apiUrl}/api/create?docName=${docName}&userName=${userName}`, {method: 'POST'});
-        const data: DocumentOperationAnswer = await response.json();
-        console.log(data);
-        return data;
+    /**
+     * Copy text to clipboard.
+     * Since the clipboard API requires a HTTPS connection, we have to use this unsecure hack.
+     * @param text The text to copy to the clipboard
+     */
+    const unsecureClipboardCopy = (text: string) => {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        document.body.prepend(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+        } catch (err) {
+            console.error('Unable to copy', err);
+        } finally {
+            textArea.remove();
+        }
     }
 
+    /**
+     * Fetch the API to create a new document.
+     * @param docName The name of the document.
+     * @param userName The name of the user.
+     */
+    const createDocument = async (docName: string, userName: string): Promise<DocumentOperationAnswer> => {
+        const response = await fetch(`http://${apiUrl}/api/create?docName=${docName}&userName=${userName}`, {method: 'POST'});
+        return await response.json() as DocumentOperationAnswer;
+    }
+
+    /**
+     * Fetch the API to join an existing document.
+     * @param docId The id of the document.
+     * @param userName The name of the user.
+     */
     const joinDocument = async (docId: string, userName: string): Promise<DocumentOperationAnswer> => {
         const response = await fetch(`http://${apiUrl}/api/join?docId=${docId}&userName=${userName}`, {method: 'POST'});
-        const data: DocumentOperationAnswer = await response.json();
-        console.log(data);
-        return data;
+        return await response.json() as DocumentOperationAnswer;
     }
 
     let userNamePlaceholder: string = 'User Name';
     let documentNamePlaceholder: string = 'Document title';
     let documentIdPlaceholder: string = 'Document ID';
 
+    /**
+     * Actions to perform when the user close the connection modal.
+     */
     const onConfirm = () => {
         if (tab === 0) {
             if (!userNameForm || !documentNameForm) {
@@ -333,7 +392,8 @@
                 documentAnswer = data;
                 docName = documentAnswer.document.name;
                 code = documentAnswer.document.content;
-                console.log(documentAnswer);
+                oldCode = code;
+                editor.setValue(code);
                 sendMessage({type: 'CONNECT', userId: documentAnswer.user.id, docId: documentAnswer.document.id});
             });
         } else {
@@ -346,8 +406,8 @@
                 documentAnswer = data;
                 docName = documentAnswer.document.name;
                 code = documentAnswer.document.content;
+                oldCode = code;
                 editor.setValue(code);
-                console.log(documentAnswer);
                 sendMessage({type: 'CONNECT', userId: documentAnswer.user.id, docId: documentAnswer.document.id});
             });
         }
@@ -406,7 +466,7 @@
                 <button
                     class="hover:bg-blue-50 p-1 bg-blue-100 dark:bg-slate-700 dark:fill-slate-300 border rounded-lg active:scale-90 border-slate-400 dark:border-gray-600 transition-all duration-100"
                     on:click={() => {
-                        navigator.clipboard.writeText(documentAnswer.document.id);
+                        unsecureClipboardCopy(documentAnswer.document.id)
                         toast.push('Document id copied to clipboard');
                     }}
                 >

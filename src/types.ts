@@ -4,11 +4,6 @@ export interface ConnectMessage {
 	docId: string,
 }
 
-export interface DisconnectMessage {
-	type: 'DISCONNECT',
-	userId: string,
-}
-
 export interface InsertCharMessage {
 	type: 'INSERT_CHAR',
 	lineIdx: number,
