@@ -80,7 +80,7 @@ Parmi les fonctionnalités de l'application, nous avons implémenté :
 - Thème d'application sombre et clair, adapté au thème du système de l'utilisateur.
 - L'affichage de la liste des utilisateurs connectés.
 - L'affichage des informations du document (nombre de caractères et nombre de mots).
-- La possibilité de copier l'id du document dans le presse-papiers, pour le partager avec d'autres utilisateurs.
+- L'affichage de l'ID du document, pour le partager avec d'autres utilisateurs.
 - La possibilité de télécharger le document au format Markdown.
 - La possibilité de changer de vue entre :
   - L'éditeur Markdown

@@ -333,28 +333,6 @@
     }
 
     /**
-     * Copy text to clipboard.
-     * Since the clipboard API requires a HTTPS connection, we have to use this unsecure hack.
-     * @param text The text to copy to the clipboard
-     */
-    const unsecureClipboardCopy = (text: string) => {
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.top = '0';
-        textArea.style.left = '0';
-        document.body.prepend(textArea);
-        textArea.select();
-        try {
-            document.execCommand('copy');
-        } catch (err) {
-            console.error('Unable to copy', err);
-        } finally {
-            textArea.remove();
-        }
-    }
-
-    /**
      * Fetch the API to create a new document.
      * @param docName The name of the document.
      * @param userName The name of the user.
@@ -443,8 +421,8 @@
         </dialog>
     {/if}
 
-    <div class="flex py-6 px-2 h-8 items-center justify-between bg-blue-200 dark:bg-slate-800 border-t border-b border-gray-300 dark:border-gray-600">
-        <div class="flex">
+    <div class="flex px-2 py-1 h-12 items-center justify-between bg-blue-200 dark:bg-slate-800 border-t border-b border-gray-300 dark:border-gray-600">
+        <div class="flex mr-2">
             <input class="p-1 bg-blue-50 dark:bg-slate-700 rounded-l-lg border border-slate-400 dark:border-gray-600 dark:placeholder-white dark:text-white outline-none focus:ring-1 focus:ring-blue-400 focus:dark:ring-blue-700 z-10 transition-all duration-150" placeholder="File name" bind:value={docName} on:click={() => oldDocName = docName} id="doc-name-input"/>
             <p class="p-1 bg-blue-100 dark:bg-gray-800 rounded-r-lg border-y border-r border-slate-400 dark:border-gray-600 dark:text-white select-none">.md</p>
         </div>
@@ -455,25 +433,19 @@
                 {/each}
             </div>
             <span class="toggle dark:text-white flex items-center justify-center"></span>
+            <div class="flex lg:text-lg text-sm h-full whitespace-nowrap">
+                <p class="flex items-center p-1 h-full bg-blue-100 dark:bg-gray-800 rounded-l-lg border-y border-l border-slate-400 dark:border-gray-600 dark:text-white select-none">
+                    Doc ID:
+                </p>
+                <p class="flex items-center p-1 h-full bg-blue-50 dark:bg-slate-700 rounded-r-lg border border-slate-400 dark:border-gray-600 dark:placeholder-white dark:text-white">
+                    {documentAnswer?.document.id ? documentAnswer.document.id : 'No document ID'}
+                </p>
+            </div>
             <div class="group relative flex justify-center whitespace-nowrap py-1 px-3 dark:text-white bg-blue-100 dark:bg-slate-700 rounded-lg border border-slate-400 dark:border-gray-600">
                 <p class="font-semibold text-lg select-none">i</p>
                 <div class="group-hover:block hidden absolute top-12 p-2 bg-blue-100 dark:bg-slate-600 rounded-lg border border-gray-300 dark:border-gray-500 z-50">
                     <p class="">Number of words: {nbOfWords}</p>
                     <p class="">Number of characters: {nbOfChars}</p>
-                </div>
-            </div>
-            <div class="group relative flex justify-center whitespace-nowrap">
-                <button
-                    class="hover:bg-blue-50 p-1 bg-blue-100 dark:bg-slate-700 dark:fill-slate-300 border rounded-lg active:scale-90 border-slate-400 dark:border-gray-600 transition-all duration-100"
-                    on:click={() => {
-                        unsecureClipboardCopy(documentAnswer.document.id)
-                        toast.push('Document id copied to clipboard');
-                    }}
-                >
-                    <svg class="h-7 select-none" viewBox="0 0 24 24"> <path d="M 4 2 C 2.895 2 2 2.895 2 4 L 2 17 C 2 17.552 2.448 18 3 18 C 3.552 18 4 17.552 4 17 L 4 4 L 17 4 C 17.552 4 18 3.552 18 3 C 18 2.448 17.552 2 17 2 L 4 2 z M 8 6 C 6.895 6 6 6.895 6 8 L 6 20 C 6 21.105 6.895 22 8 22 L 20 22 C 21.105 22 22 21.105 22 20 L 22 8 C 22 6.895 21.105 6 20 6 L 8 6 z M 8 8 L 20 8 L 20 20 L 8 20 L 8 8 z"/></svg>
-                </button>
-                <div class="group-hover:block hidden absolute top-12 p-2 bg-blue-100 dark:bg-slate-600 rounded-lg border border-gray-300 dark:border-gray-500 z-50">
-                    <p class="dark:text-white">Copy document id</p>
                 </div>
             </div>
             <div class="group relative flex justify-center whitespace-nowrap">
