@@ -138,6 +138,7 @@
             }
 
             if (messageJson.type==='DISCONNECT') {
+                toast.push(`${connectedUser.find((user: User) => user.userId === messageJson.userId)?.userName} left the document`);
                 connectedUser = connectedUser.filter((user: User) => user.userId !== messageJson.userId);
             }
 
@@ -161,9 +162,6 @@
             if (messageJson.userId !== documentAnswer.user.id) {
                 if (messageJson.type==='CONNECT') {
                     toast.push(`${messageJson.userName} joined the document`);
-                    return;
-                } else if (messageJson.type==='DISCONNECT'){
-                    toast.push(`${messageJson.userName} left the document`);
                     return;
                 } else if (messageJson.type==='CHANGE_DOC_NAME') {
                     docName = messageJson.newName;
