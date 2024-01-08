@@ -76,6 +76,7 @@
             automaticLayout: true,
             fontFamily: 'JetBrains Mono',
             lineNumbersMinChars: 3,
+            contextmenu: false,
             wordWrap: 'on' as const,
             wordWrapColumn: 80,
             scrollBeyondLastLine: false,
@@ -91,6 +92,13 @@
 
         // Disable default completion panel
         editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {});
+
+        // Disable copy or paste, since it is not supported by the server
+        editor.onKeyDown((e) => {
+            if ((e.keyCode === 33 || e.keyCode === 52) && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+            }
+        })
 
         code = editor.getValue();
 
